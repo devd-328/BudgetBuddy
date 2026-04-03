@@ -1,0 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-navy text-white;
+    margin: 0;
+    padding: 0;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-accent/40 rounded-full;
+  }
+
+  /* Remove number input arrows */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+@layer components {
+  /* App shell — mobile-first centered layout */
+  .app-shell {
+    @apply w-full max-w-mobile mx-auto flex flex-col min-h-dvh relative;
+    background: #1a1a2e;
+  }
+
+  /* Scrollable page content above bottom nav */
+  .page-content {
+    @apply flex-1 overflow-y-auto pb-24 px-4 pt-4;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-surface-card rounded-3xl p-4;
+  }
+  .card-navy {
+    @apply bg-navy-card rounded-3xl p-4;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-accent text-white font-semibold rounded-2xl py-3 px-6
+           active:scale-95 transition-all duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply bg-surface-input text-white/80 font-medium rounded-2xl py-3 px-6
+           active:scale-95 transition-all duration-150;
+  }
+  .btn-danger {
+    @apply bg-expense text-white font-semibold rounded-2xl py-3 px-6
+           active:scale-95 transition-all duration-150;
+  }
+
+  /* Input field */
+  .input-field {
+    @apply w-full bg-surface-input text-white placeholder-white/40
+           border border-white/10 rounded-2xl px-4 py-3 text-sm
+           focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/40
+           transition-all duration-200;
+  }
+
+  /* Bottom nav tab */
+  .nav-tab {
+    @apply flex flex-col items-center justify-center gap-0.5 flex-1
+           text-white/40 transition-colors duration-200;
+  }
+  .nav-tab.active {
+    @apply text-accent;
+  }
+
+  /* Badge */
+  .badge {
+    @apply text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+  .badge-income {
+    @apply bg-income/20 text-income;
+  }
+  .badge-expense {
+    @apply bg-expense/20 text-expense;
+  }
+  .badge-pending {
+    @apply bg-yellow-500/20 text-yellow-400;
+  }
+  .badge-settled {
+    @apply bg-income/20 text-income;
+  }
+
+  /* Spinner */
+  .spinner {
+    @apply w-6 h-6 border-2 border-white/20 border-t-accent rounded-full animate-spin;
+  }
+
+  /* Glass effect */
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Section title */
+  .section-title {
+    @apply text-sm font-semibold text-white/50 uppercase tracking-wider mb-3;
+  }
+}
+
+@layer utilities {
+  /* Safe area insets for notched phones */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(135deg, #378ADD, #5DCAA5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Hide scrollbar but keep scroll */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .min-h-dvh {
+    min-height: 100dvh;
+  }
+}
+
+/* Page transition animation */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: slideUp 0.25s ease-out;
+}
+
+/* Pulse glow for accent elements */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(55, 138, 221, 0.4); }
+  50%       { box-shadow: 0 0 20px rgba(55, 138, 221, 0.8); }
+}
+.glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
