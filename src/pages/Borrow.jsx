@@ -1,15 +1,18 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useDebts } from '../hooks/useDebts'
 import toast from 'react-hot-toast'
 
 export default function Borrow() {
+  const navigate = useNavigate()
   const { user, profile } = useAuth()
   const { debts, loading, theyOweYou, youOwe, updateStatus, addDebt } = useDebts(user?.id)
   
   const [activeTab, setActiveTab] = useState('lent') // 'lent' | 'owed' | 'settled'
   const [showAddForm, setShowAddForm] = useState(false)
-  const currency = profile?.currency || '$'
+  const currency = profile?.currency || 'Rs'
 
   // Add Form State
   const [newPerson, setNewPerson] = useState('')
@@ -71,7 +74,12 @@ export default function Borrow() {
   return (
     <div className="page-enter pb-24">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold">Borrow & Lend</h1>
+        <div className="flex items-center gap-3">
+           <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors active:scale-95 text-white/50 hover:text-white">
+             <ArrowLeft size={18} />
+           </button>
+           <h1 className="text-xl font-bold">Borrow & Lend</h1>
+        </div>
         <button 
            onClick={() => setShowAddForm(true)} 
            className="bg-accent/20 text-accent font-bold px-3 py-1.5 rounded-full text-sm flex items-center gap-2 active:scale-95 transition-transform"
@@ -131,9 +139,9 @@ export default function Borrow() {
            <p className="text-sm text-white/50">No records found for this category.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
            {filteredDebts.map(debt => (
-              <div key={debt.id} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+              <div key={debt.id} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between transition-colors hover:bg-white/10">
                  <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-accent shrink-0 uppercase tracking-widest text-xs">
                        {debt.person_name.substring(0, 2)}

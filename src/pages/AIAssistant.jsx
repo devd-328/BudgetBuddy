@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function AIAssistant() {
+  const navigate = useNavigate()
   const { user, profile } = useAuth()
-  const currency = profile?.currency || '$'
+  const currency = profile?.currency || 'Rs'
   
   const [messages, setMessages] = useState([
     { sender: 'AI', text: "Hello! I'm your BudgetBuddy assistant. Try asking:\n- 'How much did I spend?'\n- 'Add 500 for Coffee'\n- 'How much can I save?'\n- 'Show my top category'" }
@@ -165,17 +168,20 @@ export default function AIAssistant() {
   }
 
   return (
-    <div className="page-enter flex flex-col h-screen fixed inset-0 pb-[70px] bg-navy text-white">
+    <div className="page-enter flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)]">
       
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between bg-navy shrink-0 z-10 border-b border-white/5">
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <span className="text-2xl">🤖</span> AI Assistant
-        </h1>
+      <div className="py-4 flex items-center gap-3 shrink-0 z-10 border-b border-white/5 mb-2">
+         <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors active:scale-95 text-white/50 hover:text-white">
+            <ArrowLeft size={18} />
+         </button>
+         <h1 className="text-xl font-bold flex items-center gap-2">
+            <span className="text-2xl">🤖</span> AI Assistant
+         </h1>
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+      <div className="flex-1 overflow-y-auto py-2 space-y-4">
         {messages.map((msg, index) => (
           <div key={index} className={`flex ${msg.sender === 'User' ? 'justify-end' : 'justify-start'}`}>
             <div 
@@ -202,7 +208,7 @@ export default function AIAssistant() {
       </div>
 
       {/* Input Terminal */}
-      <div className="px-6 py-4 bg-navy border-t border-white/5 shrink-0 z-10">
+      <div className="pt-4 mt-2 border-t border-white/5 shrink-0 z-10">
         <div className="flex items-end gap-2 bg-white/5 p-2 rounded-[24px] border border-white/10">
            <button 
              type="button"

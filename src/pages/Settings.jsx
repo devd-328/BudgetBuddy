@@ -1,17 +1,70 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Upload, Image as ImageIcon, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
+
+const CURRENCIES = [
+  { label: 'Rupee (Rs)', value: 'Rs' },
+  { label: 'Dollar ($)', value: '$' },
+  { label: 'Euro (€)', value: '€' },
+  { label: 'Pound (£)', value: '£' },
+  { label: 'Yen (¥)', value: '¥' },
+  { label: 'Swiss Franc (CHF)', value: 'CHF' },
+  { label: 'Dinar (د.ك)', value: 'د.ك' },
+]
 
 export default function Settings() {
   const { user, profile, setProfile, signOut } = useAuth()
   const navigate = useNavigate()
 
   // Profile Form States
-  const [name, setName] = useState(profile?.name || '')
-  const [currency, setCurrency] = useState(profile?.currency || '$')
+  const [name, setName] = useState(profile?.name || user?.user_metadata?.full_name || user?.user_metadata?.name || '')
+  const [currency, setCurrency] = useState(profile?.currency || 'Rs')
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '')
   const [profileLoading, setProfileLoading] = useState(false)
+
+  // File Upload States
+  const [file, setFile] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(profile?.avatar_url || '')
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef(null)
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0]
+    if (selectedFile) {
+      if (selectedFile.size > 2 * 1024 * 1024) {
+        return toast.error('File size must be less than 2MB')
+      }
+      setFile(selectedFile)
+      setPreviewUrl(URL.createObjectURL(selectedFile))
+    }
+  }
+
+  const onDragOver = (e) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const onDragLeave = () => {
+    setIsDragging(false)
+  }
+
+  const onDrop = (e) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const selectedFile = e.dataTransfer.files[0]
+    if (selectedFile && selectedFile.type.startsWith('image/')) {
+       if (selectedFile.size > 2 * 1024 * 1024) {
+         return toast.error('File size must be less than 2MB')
+       }
+       setFile(selectedFile)
+       setPreviewUrl(URL.createObjectURL(selectedFile))
+    } else {
+       toast.error('Please drop an image file')
+    }
+  }
 
   // Password States
   const [password, setPassword] = useState('')
@@ -24,14 +77,37 @@ export default function Settings() {
     e.preventDefault()
     setProfileLoading(true)
     try {
+      let finalAvatarUrl = avatarUrl
+
+      // 1. Upload file if selected
+      if (file) {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`
+        
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, file, { upsert: true })
+
+        if (uploadError) throw uploadError
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName)
+        
+        finalAvatarUrl = publicUrl
+      }
+
+      // 2. Update Profile
       const { error } = await supabase
         .from('profiles')
-        .update({ name, currency })
+        .update({ name, currency, avatar_url: finalAvatarUrl })
         .eq('user_id', user.id)
 
       if (error) throw error
 
-      setProfile(prev => ({ ...prev, name, currency }))
+      setProfile(prev => ({ ...prev, name, currency, avatar_url: finalAvatarUrl }))
+      setAvatarUrl(finalAvatarUrl)
+      setFile(null)
       toast.success('Profile updated successfully')
     } catch (err) {
       toast.error('Failed to update profile')
@@ -149,7 +225,12 @@ export default function Settings() {
   return (
     <div className="page-enter pb-24">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-bold">Settings</h1>
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors active:scale-95 text-white/50 hover:text-white">
+            <ArrowLeft size={18} />
+          </button>
+          <h1 className="text-xl font-bold">Settings</h1>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -184,13 +265,61 @@ export default function Settings() {
                </div>
                <div>
                   <label className="text-[10px] text-white/40 uppercase font-bold tracking-wider mb-1 block">Currency Symbol</label>
-                  <input 
-                     type="text"
+                  <select 
                      value={currency}
                      onChange={(e) => setCurrency(e.target.value)}
-                     className="input-field max-w-[100px]"
+                     className="input-field max-w-[170px] appearance-none"
+                     style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
                      required
+                  >
+                    {CURRENCIES.map(curr => (
+                      <option key={curr.value} value={curr.value} className="bg-navy">
+                        {curr.label}
+                      </option>
+                    ))}
+                  </select>
+               </div>
+               <div>
+                  <label className="text-[10px] text-white/40 uppercase font-bold tracking-wider mb-1 block">Profile Picture</label>
+                  
+                  <input 
+                    type="file" 
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    className="hidden"
                   />
+
+                  <div 
+                    className={`file-dropzone ${isDragging ? 'dragging' : ''}`}
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {previewUrl ? (
+                      <div className="flex flex-col items-center gap-3">
+                         <img src={previewUrl} alt="Preview" className="file-dropzone-preview" />
+                         <p className="text-[10px] text-white/40">Click or drag to change</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-white/40">
+                         <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-1">
+                            <Upload size={24} />
+                         </div>
+                         <p className="text-xs font-medium text-white/60">Drop your image here</p>
+                         <p className="text-[10px]">or click to browse from device</p>
+                      </div>
+                    )}
+                    
+                    {file && (
+                      <div className="absolute top-2 right-2 text-income animate-in fade-in">
+                        <CheckCircle2 size={16} />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <p className="text-[9px] text-white/30 mt-2 text-center">Max size: 2MB. Supports JPG, PNG, WebP.</p>
                </div>
                <button type="submit" className="btn-primary w-full h-[40px] flex items-center justify-center text-sm" disabled={profileLoading}>
                   {profileLoading ? <span className="loader w-4 h-4 border-2 border-[#1a1a2e]/20 border-t-[#1a1a2e] rounded-full animate-spin"></span> : 'Update Profile'}

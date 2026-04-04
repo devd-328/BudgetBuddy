@@ -2,8 +2,10 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 
 import BottomNav       from './components/BottomNav'
+import Sidebar         from './components/Sidebar'
 import LoadingSpinner  from './components/LoadingSpinner'
 
+import Landing         from './pages/Landing'
 import Dashboard       from './pages/Dashboard'
 import Analytics       from './pages/Analytics'
 import AddTransaction  from './pages/AddTransaction'
@@ -29,16 +31,28 @@ function ProtectedRoute({ children }) {
   return children
 }
 
+/** Route root (/) conditionally to Dashboard or Landing */
+function HomeRoute() {
+  const { isAuthenticated, loading } = useAuth()
+  if (loading) return <LoadingSpinner fullPage />
+  if (isAuthenticated) return <Dashboard />
+  return <Landing />
+}
+
 /** Routes that show the bottom nav shell */
 const NAV_ROUTES = ['/', '/analytics', '/add', '/borrow', '/ai', '/settings']
 
 export default function App() {
   const location = useLocation()
-  const showNav = NAV_ROUTES.includes(location.pathname)
+  const { isAuthenticated } = useAuth()
+  const showNav = NAV_ROUTES.includes(location.pathname) && isAuthenticated
+  const isLanding = !isAuthenticated && location.pathname === '/'
 
   return (
-    <div className="app-shell">
-      <main className="page-content">
+    <div className={isLanding ? "" : "app-shell"}>
+      {showNav && <Sidebar />}
+      
+      <main className={isLanding ? "" : "page-content"}>
         <Routes>
           {/* Public auth routes */}
           <Route path="/login"   element={<Login />} />
@@ -46,9 +60,7 @@ export default function App() {
           <Route path="/forgot-password"  element={<ForgotPassword />} />
 
           {/* Protected app routes */}
-          <Route path="/" element={
-            <ProtectedRoute><Dashboard /></ProtectedRoute>
-          } />
+          <Route path="/" element={<HomeRoute />} />
           <Route path="/analytics" element={
             <ProtectedRoute><Analytics /></ProtectedRoute>
           } />

@@ -1,0 +1,674 @@
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import './landing_styles.css';
+
+export default function Landing() {
+  const [emails, setEmails] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('bb_emails') || '[]'); } 
+    catch { return []; }
+  });
+  const [toastMsg, setToastMsg] = useState('');
+
+  useEffect(() => {
+    const navbar = document.getElementById('navbar');
+    const handleScroll = () => {
+      navbar?.classList.toggle('scrolled', window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      revealObserver.disconnect();
+    };
+  }, []);
+
+  const handleMobileMenuToggle = (open) => {
+    const mobileMenu = document.getElementById('mobile-menu');
+    const hamburger = document.getElementById('hamburger');
+    if (open) {
+      mobileMenu?.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      hamburger?.setAttribute('aria-expanded', 'true');
+    } else {
+      mobileMenu?.classList.remove('open');
+      document.body.style.overflow = '';
+      hamburger?.setAttribute('aria-expanded', 'false');
+    }
+  };
+
+  const handleScrollTo = (e, targetId) => {
+    e.preventDefault();
+    const target = document.getElementById(targetId);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (targetId === 'cta') {
+        setTimeout(() => {
+          document.getElementById('cta-email')?.focus();
+        }, 600);
+      }
+    }
+    handleMobileMenuToggle(false);
+  };
+
+  const handleFaqToggle = (e) => {
+    const btn = e.currentTarget;
+    const item = btn.parentElement;
+    const answer = item.querySelector('.faq-answer');
+    const chevron = item.querySelector('.faq-chevron');
+    
+    const isOpen = answer.classList.contains('open');
+
+    document.querySelectorAll('.faq-answer').forEach(a => a.classList.remove('open'));
+    document.querySelectorAll('.faq-chevron').forEach(c => c.classList.remove('open'));
+    document.querySelectorAll('.faq-btn').forEach(b => b.setAttribute('aria-expanded', 'false'));
+
+    if (!isOpen) {
+      answer.classList.add('open');
+      chevron?.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+    }
+  };
+
+  const handleEmailSubmit = (e) => {
+    e.preventDefault();
+    const emailInput = document.getElementById('cta-email');
+    const emailError = document.getElementById('email-error');
+    const val = emailInput.value.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(val)) {
+      emailError.textContent = 'Please enter a valid email address.';
+      emailError.style.display = 'block';
+      emailInput.focus();
+      return;
+    }
+
+    emailError.style.display = 'none';
+    const newEmails = [...emails];
+    if (!newEmails.includes(val)) {
+      newEmails.push(val);
+      localStorage.setItem('bb_emails', JSON.stringify(newEmails));
+      setEmails(newEmails);
+    }
+
+    emailInput.value = '';
+    setToastMsg('🎉 Check your inbox! You\'re on the list.');
+    setTimeout(() => setToastMsg(''), 4000);
+  };
+
+  return (
+    <div className="font-inter antialiased landing-page">
+      <a href="#main" className="skip-link" onClick={(e) => handleScrollTo(e, 'main')}>Skip to main content</a>
+      
+      <div id="toast" role="alert" aria-live="polite" className={toastMsg ? 'show' : ''}>
+        {toastMsg}
+      </div>
+
+      
+
+  {/* Skip to content */}
+  <a href="#main" className="skip-link">Skip to main content</a>
+
+  {/* Toast */}
+  <div id="toast" role="alert" aria-live="polite"></div>
+
+  {/* ═══════════════════════════════════════════
+       SECTION 1: NAVBAR
+  ═══════════════════════════════════════════ */}
+  <header id="navbar">
+    <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between" role="navigation" aria-label="Main navigation">
+      {/* Logo */}
+      <a href="#hero" className="flex items-center gap-2.5 group" aria-label="BudgetBuddy home">
+        <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center text-white font-black text-lg shadow-lg shadow-accent/30">💰</div>
+        <span className="text-white font-bold text-lg tracking-tight">BudgetBuddy</span>
+      </a>
+
+      {/* Desktop nav */}
+      <div className="hidden md:flex items-center gap-8">
+        <a href="#solutions" className="text-white/70 hover:text-white text-sm font-medium transition-colors">Features</a>
+        <a href="#pricing" className="text-white/70 hover:text-white text-sm font-medium transition-colors">Pricing</a>
+        <a href="#faq" className="text-white/70 hover:text-white text-sm font-medium transition-colors">FAQ</a>
+        <div className="flex items-center gap-4 pl-2">
+          <Link to="/login" className="text-white/80 hover:text-white text-sm font-semibold transition-colors">Log in</Link>
+          <Link to="/signup" className="btn-scale bg-accent text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-blue-500 shadow-md shadow-accent/30 transition-colors">Sign up</Link>
+        </div>
+      </div>
+
+      {/* Hamburger */}
+      <button id="hamburger" className="md:hidden flex flex-col gap-1.5 p-2" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu" onClick={() => handleMobileMenuToggle(true)}>
+        <span className="ham-line"></span>
+        <span className="ham-line"></span>
+        <span className="ham-line"></span>
+      </button>
+    </nav>
+  </header>
+
+  {/* Mobile menu */}
+  <div id="mobile-menu" className="fixed inset-0 z-50 bg-navy flex flex-col" role="dialog" aria-label="Mobile navigation">
+    <div className="flex justify-between items-center px-6 py-5 border-b border-white/10">
+      <span className="text-white font-bold text-lg">💰 BudgetBuddy</span>
+      <button id="close-menu" className="text-white/60 hover:text-white p-2" aria-label="Close menu" onClick={() => handleMobileMenuToggle(false)}>
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <nav className="flex flex-col gap-1 px-6 py-8 text-lg font-medium">
+      <a href="#solutions" className="mobile-nav-link text-white/80 hover:text-white py-3 border-b border-white/5 transition-colors" onClick={(e) => handleScrollTo(e, 'solutions')}>Features</a>
+      <a href="#pricing" className="mobile-nav-link text-white/80 hover:text-white py-3 border-b border-white/5 transition-colors" onClick={(e) => handleScrollTo(e, 'pricing')}>Pricing</a>
+      <a href="#faq" className="mobile-nav-link text-white/80 hover:text-white py-3 transition-colors" onClick={(e) => handleScrollTo(e, 'faq')}>FAQ</a>
+      <div className="flex flex-col gap-3 mt-8">
+        <Link to="/login" className="mobile-nav-link block text-center border border-white/20 text-white py-4 rounded-2xl font-semibold transition-colors hover:bg-white/5">Log in</Link>
+        <Link to="/signup" className="mobile-nav-link btn-scale bg-accent text-white text-center py-4 rounded-2xl font-semibold shadow-lg shadow-accent/30 transition-colors">Sign up</Link>
+      </div>
+    </nav>
+  </div>
+
+  <main id="main">
+
+  {/* ═══════════════════════════════════════════
+       SECTION 2: HERO
+  ═══════════════════════════════════════════ */}
+  <section id="hero" className="bg-navy min-h-screen flex items-center pt-10 pb-20 px-6 overflow-hidden">
+    <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-16 items-center">
+      {/* Left copy */}
+      <div className="reveal">
+        {/* Badge */}
+        <div className="badge-pill bg-income/10 text-income border border-income/20 w-fit mb-6">
+          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          Free AI-powered finance app
+        </div>
+
+        {/* H1 – VARIANT A (default) */}
+        <h1 className="text-white font-black leading-tight mb-6" style={{fontSize: 'clamp(36px,5vw,56px)', letterSpacing: '-1.5px', lineHeight: '1.1'}}>
+          Your money, finally<br />
+          <span style={{color: '#5DCAA5'}}>under control</span>
+        </h1>
+        {/* VARIANT B: <h1 ...>Know exactly where<br/><span style={{color: '#5DCAA5'}}>your money goes</span></h1> */}
+        {/* VARIANT C: <h1 ...>The budget app you'll<br/><span style={{color: '#5DCAA5'}}>actually use</span></h1> */}
+
+        <p className="text-white/60 text-lg leading-relaxed mb-10 max-w-lg">
+          Stop tracking expenses in WhatsApp notes. BudgetBuddy gives students and workers a beautiful, voice-powered budget tracker — completely free.
+        </p>
+
+        {/* CTA row */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-12">
+          {/* VARIANT A CTA (default) */}
+          <button id="hero-cta-primary" className="btn-scale bg-accent text-white font-semibold text-base px-7 py-4 rounded-2xl shadow-xl shadow-accent/30 hover:bg-blue-500 transition-colors">
+            Start for free — no card needed
+          </button>
+          {/* VARIANT B: <button ...>Try BudgetBuddy free today</button> */}
+          {/* VARIANT C: <button ...>Install free — takes 30 seconds</button> */}
+          <button id="hero-cta-secondary" className="btn-scale border-2 border-white/20 text-white font-semibold text-base px-7 py-4 rounded-2xl hover:border-white/40 hover:bg-white/5 transition-all">
+            See how it works ↓
+          </button>
+        </div>
+
+        {/* Social proof */}
+        <div className="flex items-center gap-3">
+          <div className="avatar-overlap">
+            <div className="avatar" style={{background: '#378ADD'}}>AK</div>
+            <div className="avatar" style={{background: '#5DCAA5'}}>SF</div>
+            <div className="avatar" style={{background: '#F0997B'}}>HM</div>
+            <div className="avatar" style={{background: '#9B5DE5'}}>ZA</div>
+          </div>
+          <p className="text-white/50 text-sm"><span className="text-white font-semibold">2,400+</span> students joined this month</p>
+        </div>
+      </div>
+
+      {/* Right: Phone mockup */}
+      <div className="flex justify-center lg:justify-end reveal reveal-delay-2">
+        <div className="phone-float w-72 rounded-3xl p-5 shadow-2xl shadow-black/50 border border-white/10" style={{background: '#232354'}}>
+          {/* Status bar */}
+          <div className="flex justify-between text-white/30 text-xs mb-5 px-1">
+            <span>9:41</span>
+            <div className="flex gap-1 items-center">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M1.5 8.5a13 13 0 0121 0M5 12a10 10 0 0114 0M8.5 15.5a6 6 0 017 0M12 19h.01"/></svg>
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M23 7.5V19a2 2 0 01-2 2H3a2 2 0 01-2-2V7.5C1 6.12 2.12 5 3.5 5h17C21.88 5 23 6.12 23 7.5z"/></svg>
+            </div>
+          </div>
+          {/* Balance card */}
+          <div className="bg-white/5 rounded-2xl p-4 mb-4 border border-white/10">
+            <p className="text-white/40 text-xs mb-1">Total Balance</p>
+            <p className="text-white font-black text-3xl mb-3" style={{letterSpacing: '-1px'}}>$2,840.00</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs mb-0.5" style={{color: '#5DCAA5'}}>● Income</p>
+                <p className="text-white font-bold text-sm">$4,200</p>
+              </div>
+              <div>
+                <p className="text-xs mb-0.5" style={{color: '#F0997B'}}>● Expenses</p>
+                <p className="text-white font-bold text-sm">$1,360</p>
+              </div>
+            </div>
+          </div>
+          {/* Mini bar chart */}
+          <div className="bg-white/5 rounded-2xl p-4 mb-4 border border-white/10">
+            <p className="text-white/40 text-xs mb-3">Weekly trend</p>
+            <div className="flex items-end gap-1.5 h-14">
+              <div className="mini-bar flex-1" style={{height: '40%', background: '#378ADD', opacity: '0.6'}}></div>
+              <div className="mini-bar flex-1" style={{height: '65%', background: '#378ADD', opacity: '0.7'}}></div>
+              <div className="mini-bar flex-1" style={{height: '50%', background: '#378ADD', opacity: '0.6'}}></div>
+              <div className="mini-bar flex-1" style={{height: '80%', background: '#378ADD', opacity: '0.8'}}></div>
+              <div className="mini-bar flex-1" style={{height: '55%', background: '#378ADD', opacity: '0.6'}}></div>
+              <div className="mini-bar flex-1" style={{height: '90%', background: '#5DCAA5'}}></div>
+              <div className="mini-bar flex-1" style={{height: '70%', background: '#378ADD', opacity: '0.7'}}></div>
+            </div>
+          </div>
+          {/* Recent transactions */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-expense/20 text-sm flex items-center justify-center">🍔</div>
+                <div>
+                  <p className="text-white text-xs font-semibold">Food</p>
+                  <p className="text-white/30 text-xs">Today</p>
+                </div>
+              </div>
+              <span className="text-expense text-xs font-bold">-$12</span>
+            </div>
+            <div className="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-income/20 text-sm flex items-center justify-center">💼</div>
+                <div>
+                  <p className="text-white text-xs font-semibold">Salary</p>
+                  <p className="text-white/30 text-xs">Mon</p>
+                </div>
+              </div>
+              <span className="text-income text-xs font-bold">+$4,200</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ═══════════════════════════════════════════
+       SECTION 3: PROBLEMS
+  ═══════════════════════════════════════════ */}
+  <section id="problems" className="bg-white py-24 px-6">
+    <div className="max-w-5xl mx-auto text-center">
+      <div className="badge-pill bg-orange-50 text-expense border border-expense/20 mx-auto reveal">⚠️ The problem</div>
+      <h2 className="font-bold text-navy mb-4 reveal" style={{fontSize: 'clamp(26px,4vw,36px)', letterSpacing: '-0.5px'}}>Sound familiar?</h2>
+      <p className="text-muted max-w-xl mx-auto mb-16 reveal" style={{color: '#6b7280'}}>
+        Most people know they should budget. Almost nobody does — because the tools are too complicated.
+      </p>
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="reveal reveal-delay-1 text-left p-7 rounded-3xl border border-orange-100" style={{background: '#FAECE7'}}>
+          <div className="text-3xl mb-4">📓</div>
+          <h3 className="font-semibold text-navy mb-2" style={{fontSize: '18px'}}>Notepad chaos</h3>
+          <p style={{color: '#6b7280', fontSize: '15px', lineHeight: '1.7'}}>Scribbled numbers in notes apps, WhatsApp chats, sticky notes. You can't see patterns. You don't know where it went.</p>
+        </div>
+        <div className="reveal reveal-delay-2 text-left p-7 rounded-3xl border border-orange-100" style={{background: '#FAECE7'}}>
+          <div className="text-3xl mb-4">💸</div>
+          <h3 className="font-semibold text-navy mb-2" style={{fontSize: '18px'}}>No idea where it went</h3>
+          <p style={{color: '#6b7280', fontSize: '15px', lineHeight: '1.7'}}>Salary hits the account. Two weeks later it's gone. You have no idea why, and it happens every single month.</p>
+        </div>
+        <div className="reveal reveal-delay-3 text-left p-7 rounded-3xl border border-orange-100" style={{background: '#FAECE7'}}>
+          <div className="text-3xl mb-4">🤦</div>
+          <h3 className="font-semibold text-navy mb-2" style={{fontSize: '18px'}}>Lost track of debts</h3>
+          <p style={{color: '#6b7280', fontSize: '15px', lineHeight: '1.7'}}>Friends owe you money. You forgot the amount, the date, the reason. Asking feels awkward. You just let it go.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ═══════════════════════════════════════════
+       SECTION 4: SOLUTIONS
+  ═══════════════════════════════════════════ */}
+  <section id="solutions" className="py-24 px-6" style={{background: '#f8f8f5'}}>
+    <div className="max-w-5xl mx-auto text-center">
+      <div className="badge-pill bg-income/10 text-income border border-income/20 mx-auto reveal">✓ The solution</div>
+      <h2 className="font-bold text-navy mb-4 reveal" style={{fontSize: 'clamp(26px,4vw,36px)', letterSpacing: '-0.5px'}}>Everything you need. Nothing you don't.</h2>
+      <p className="mb-16 reveal" style={{color: '#6b7280', maxWidth: '520px', marginLeft: 'auto', marginRight: 'auto'}}>Built for how real people actually think about money — not how accountants do.</p>
+      <div className="grid sm:grid-cols-2 gap-6 text-left">
+        <div className="reveal reveal-delay-1 bg-white p-7 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+          <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">🎙️</div>
+          <h3 className="font-semibold text-navy mb-2" style={{fontSize: '18px'}}>Voice input</h3>
+          <p style={{color: '#6b7280', fontSize: '15px', lineHeight: '1.7'}}>Just say "spent $15 on food" while you're walking. BudgetBuddy logs it automatically — no typing needed.</p>
+        </div>
+        <div className="reveal reveal-delay-2 bg-white p-7 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+          <div className="w-12 h-12 rounded-2xl bg-income/10 flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">📊</div>
+          <h3 className="font-semibold text-navy mb-2" style={{fontSize: '18px'}}>Visual charts</h3>
+          <p style={{color: '#6b7280', fontSize: '15px', lineHeight: '1.7'}}>See exactly where your money goes with beautiful pie charts and weekly trend lines. Patterns become obvious instantly.</p>
+        </div>
+        <div className="reveal reveal-delay-3 bg-white p-7 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+          <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">🤖</div>
+          <h3 className="font-semibold text-navy mb-2" style={{fontSize: '18px'}}>Free AI assistant</h3>
+          <p style={{color: '#6b7280', fontSize: '15px', lineHeight: '1.7'}}>Ask anything — "How much did I spend this month?" or "Where can I cut back?" Get smart, data-driven answers instantly.</p>
+        </div>
+        <div className="reveal reveal-delay-4 bg-white p-7 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+          <div className="w-12 h-12 rounded-2xl bg-expense/10 flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">🤝</div>
+          <h3 className="font-semibold text-navy mb-2" style={{fontSize: '18px'}}>Borrow & lend</h3>
+          <p style={{color: '#6b7280', fontSize: '15px', lineHeight: '1.7'}}>Track every debt with names, amounts, dates, and reasons. Never lose track of who owes you — or what you owe.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ═══════════════════════════════════════════
+       SECTION 5: HOW IT WORKS
+  ═══════════════════════════════════════════ */}
+  <section id="how-it-works" className="bg-white py-24 px-6">
+    <div className="max-w-4xl mx-auto text-center">
+      <div className="badge-pill bg-accent/10 text-accent border border-accent/20 mx-auto reveal">⚡ How it works</div>
+      <h2 className="font-bold text-navy mb-4 reveal" style={{fontSize: 'clamp(26px,4vw,36px)', letterSpacing: '-0.5px'}}>Up and running in 3 steps</h2>
+      <p className="mb-16 reveal" style={{color: '#6b7280'}}>No complicated setup. No learning curve. Just open and go.</p>
+      <div className="grid md:grid-cols-3 gap-8 text-left relative">
+        {/* Connector line (desktop only) */}
+        <div className="hidden md:block absolute top-8 left-1/6 right-1/6 h-0.5 bg-gray-100 z-0" style={{left: '16.7%', right: '16.7%'}}></div>
+        {/* Step 1 */}
+        <div className="reveal reveal-delay-1 flex flex-col items-center md:items-start text-center md:text-left relative z-10">
+          <div className="w-16 h-16 rounded-full bg-navy text-white flex items-center justify-center text-xl font-black mb-6 shadow-lg shadow-navy/20 flex-shrink-0">1</div>
+          <h3 className="font-semibold text-navy mb-2" style={{fontSize: '18px'}}>Install BudgetBuddy as an app</h3>
+          <p style={{color: '#6b7280', fontSize: '15px', lineHeight: '1.7'}}>Tap "Add to Home Screen." Works on Android and iPhone. No app store needed. It's already on your phone.</p>
+        </div>
+        {/* Step 2 */}
+        <div className="reveal reveal-delay-2 flex flex-col items-center md:items-start text-center md:text-left relative z-10">
+          <div className="w-16 h-16 rounded-full bg-accent text-white flex items-center justify-center text-xl font-black mb-6 shadow-lg shadow-accent/20 flex-shrink-0">2</div>
+          <h3 className="font-semibold text-navy mb-2" style={{fontSize: '18px'}}>Add your income and expenses</h3>
+          <p style={{color: '#6b7280', fontSize: '15px', lineHeight: '1.7'}}>Type, tap, or speak your transactions. AI auto-categorizes everything so your dashboard always makes sense.</p>
+        </div>
+        {/* Step 3 */}
+        <div className="reveal reveal-delay-3 flex flex-col items-center md:items-start text-center md:text-left relative z-10">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-black mb-6 shadow-lg flex-shrink-0" style={{background: '#5DCAA5', color: 'white', boxShadow: '0 8px 24px rgba(93,202,165,0.3)'}}>3</div>
+          <h3 className="font-semibold text-navy mb-2" style={{fontSize: '18px'}}>Watch your money grow</h3>
+          <p style={{color: '#6b7280', fontSize: '15px', lineHeight: '1.7'}}>See charts, get weekly insights, and hit your savings goals. You'll wonder how you managed without it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ═══════════════════════════════════════════
+       SECTION 6: COMPARISON
+  ═══════════════════════════════════════════ */}
+  <section id="comparison" className="py-24 px-6" style={{background: '#f8f8f5'}}>
+    <div className="max-w-5xl mx-auto text-center">
+      <div className="badge-pill bg-purple-50 text-purple-600 border border-purple-100 mx-auto reveal">🏆 Why we're better</div>
+      <h2 className="font-bold text-navy mb-4 reveal" style={{fontSize: 'clamp(26px,4vw,36px)', letterSpacing: '-0.5px'}}>Finally built for real people</h2>
+      <p className="mb-16 reveal" style={{color: '#6b7280'}}>No subscriptions. No bloated features. No bank logins.</p>
+      <div className="grid md:grid-cols-3 gap-6 text-left">
+        {/* BudgetBuddy */}
+        <div className="reveal reveal-delay-1 bg-white rounded-3xl p-7 pricing-featured relative">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">Our pick ✓</div>
+          <div className="text-xl font-black text-navy mb-1 mt-2">💰 BudgetBuddy</div>
+          <p className="text-sm text-muted mb-6">Free forever</p>
+          <ul className="space-y-3">
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick font-bold text-lg">✓</span> Free AI assistant</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick font-bold text-lg">✓</span> Voice input</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick font-bold text-lg">✓</span> Borrow/lend tracker</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick font-bold text-lg">✓</span> PWA — no app store</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick font-bold text-lg">✓</span> Free forever plan</li>
+          </ul>
+        </div>
+        {/* YNAB */}
+        <div className="reveal reveal-delay-2 bg-white rounded-3xl p-7 border border-gray-100">
+          <div className="text-xl font-black text-navy mb-1">YNAB</div>
+          <p className="text-sm text-muted mb-6">$99/year</p>
+          <ul className="space-y-3">
+            <li className="flex items-center gap-2 text-sm text-muted"><span className="cross font-bold text-lg">✗</span> No free plan ($99/yr)</li>
+            <li className="flex items-center gap-2 text-sm text-muted"><span className="cross font-bold text-lg">✗</span> No voice input</li>
+            <li className="flex items-center gap-2 text-sm text-muted"><span className="cross font-bold text-lg">✗</span> No debt tracking</li>
+            <li className="flex items-center gap-2 text-sm text-muted"><span className="cross font-bold text-lg">✗</span> Complex setup</li>
+            <li className="flex items-center gap-2 text-sm text-muted"><span className="cross font-bold text-lg">✗</span> Steep learning curve</li>
+          </ul>
+        </div>
+        {/* Spendee */}
+        <div className="reveal reveal-delay-3 bg-white rounded-3xl p-7 border border-gray-100">
+          <div className="text-xl font-black text-navy mb-1">Spendee</div>
+          <p className="text-sm text-muted mb-6">Freemium</p>
+          <ul className="space-y-3">
+            <li className="flex items-center gap-2 text-sm text-muted"><span className="cross font-bold text-lg">✗</span> AI locked in paid plan</li>
+            <li className="flex items-center gap-2 text-sm text-muted"><span className="cross font-bold text-lg">✗</span> No voice input</li>
+            <li className="flex items-center gap-2 text-sm text-muted"><span className="cross font-bold text-lg">✗</span> No lend tracking</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick font-bold text-lg">✓</span> Good charts</li>
+            <li className="flex items-center gap-2 text-sm text-muted"><span className="cross font-bold text-lg">✗</span> No PWA install</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ═══════════════════════════════════════════
+       SECTION 7: TESTIMONIALS
+  ═══════════════════════════════════════════ */}
+  <section id="testimonials" className="bg-white py-24 px-6">
+    <div className="max-w-5xl mx-auto text-center">
+      <div className="badge-pill bg-income/10 text-income border border-income/20 mx-auto reveal">❤️ Loved by users</div>
+      <h2 className="font-bold text-navy mb-4 reveal" style={{fontSize: 'clamp(26px,4vw,36px)', letterSpacing: '-0.5px'}}>Real results from real people</h2>
+      <p className="mb-16 reveal" style={{color: '#6b7280'}}>Not influencer quotes. Real students and workers like you.</p>
+      <div className="grid sm:grid-cols-2 gap-6 text-left">
+        <article className="reveal reveal-delay-1 p-7 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow" style={{background: '#f8f8f5'}}>
+          <div className="stars mb-3">★★★★★</div>
+          <p className="text-navy mb-5 leading-relaxed">"I used to track money in WhatsApp. Now I just say it out loud and BudgetBuddy logs it. It takes like three seconds."</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold text-sm">AK</div>
+            <div><p className="font-semibold text-navy text-sm">Ahmed K.</p><p style={{color: '#6b7280', fontSize: '13px'}}>Student, 21</p></div>
+          </div>
+        </article>
+        <article className="reveal reveal-delay-2 p-7 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow" style={{background: '#f8f8f5'}}>
+          <div className="stars mb-3">★★★★★</div>
+          <p className="text-navy mb-5 leading-relaxed">"The borrow/lend tracker alone is worth it. I actually get paid back now. My friends can't pretend they forgot anymore."</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-income flex items-center justify-center text-white font-bold text-sm">SF</div>
+            <div><p className="font-semibold text-navy text-sm">Sara F.</p><p style={{color: '#6b7280', fontSize: '13px'}}>Developer, 26</p></div>
+          </div>
+        </article>
+        <article className="reveal reveal-delay-3 p-7 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow" style={{background: '#f8f8f5'}}>
+          <div className="stars mb-3">★★★★★</div>
+          <p className="text-navy mb-5 leading-relaxed">"Saved $300 in my first month just by seeing the charts. I had no idea I was spending so much on deliveries."</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-expense flex items-center justify-center text-white font-bold text-sm">HM</div>
+            <div><p className="font-semibold text-navy text-sm">Hassan M.</p><p style={{color: '#6b7280', fontSize: '13px'}}>Freelancer, 29</p></div>
+          </div>
+        </article>
+        <article className="reveal reveal-delay-4 p-7 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow" style={{background: '#f8f8f5'}}>
+          <div className="stars mb-3">★★★★★</div>
+          <p className="text-navy mb-5 leading-relaxed">"AI told me I spend 40% on food. Cut it in half in two weeks. My savings account actually has money in it now."</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-purple-400 flex items-center justify-center text-white font-bold text-sm">ZA</div>
+            <div><p className="font-semibold text-navy text-sm">Zara A.</p><p style={{color: '#6b7280', fontSize: '13px'}}>Medical student, 23</p></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  {/* ═══════════════════════════════════════════
+       SECTION 8: PRICING
+  ═══════════════════════════════════════════ */}
+  <section id="pricing" className="py-24 px-6" style={{background: '#f8f8f5'}}>
+    <div className="max-w-5xl mx-auto text-center">
+      <div className="badge-pill bg-accent/10 text-accent border border-accent/20 mx-auto reveal">💳 Pricing</div>
+      <h2 className="font-bold text-navy mb-4 reveal" style={{fontSize: 'clamp(26px,4vw,36px)', letterSpacing: '-0.5px'}}>Start free. Upgrade when you're ready.</h2>
+      <p className="mb-16 reveal" style={{color: '#6b7280'}}>No tricks. No hidden fees. Your free plan stays free — forever.</p>
+      <div className="grid md:grid-cols-3 gap-6 items-stretch">
+        {/* Free */}
+        <div className="reveal reveal-delay-1 bg-white rounded-3xl p-8 border border-gray-100 shadow-sm text-left flex flex-col">
+          <div className="mb-6">
+            <p className="text-sm font-semibold text-muted mb-1">Free</p>
+            <div className="flex items-baseline gap-1 mb-1"><span className="text-4xl font-black text-navy">$0</span><span className="text-muted text-sm">/forever</span></div>
+            <p className="text-sm" style={{color: '#6b7280'}}>For anyone getting started</p>
+          </div>
+          <ul className="space-y-3 mb-8 flex-1">
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> Voice input & AI assistant</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> Beautiful charts</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> Borrow & lend tracker</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> 3 months history</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> PWA install</li>
+          </ul>
+          <a href="#cta" className="btn-scale block text-center border-2 border-navy text-navy font-semibold py-3.5 rounded-2xl hover:bg-navy hover:text-white transition-all">Get started</a>
+        </div>
+        {/* Pro Monthly — Featured */}
+        <div className="reveal reveal-delay-2 bg-white rounded-3xl p-8 pricing-featured text-left flex flex-col relative">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">🔥 Most popular</div>
+          <div className="mb-6 mt-2">
+            <p className="text-sm font-semibold text-accent mb-1">Pro</p>
+            <div className="flex items-baseline gap-1 mb-1"><span className="text-4xl font-black text-navy">$4</span><span className="text-muted text-sm">/month</span></div>
+            <p className="text-sm" style={{color: '#6b7280'}}>For serious budgeters</p>
+          </div>
+          <ul className="space-y-3 mb-8 flex-1">
+            <li className="flex items-center gap-2 text-sm font-medium text-navy"><span className="tick">✓</span> Everything in Free</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> Unlimited history</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> AI spending insights</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> CSV & PDF export</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> Multiple budgets</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> Smart reminders</li>
+          </ul>
+          <a href="#cta" className="btn-scale block text-center bg-accent text-white font-semibold py-3.5 rounded-2xl hover:bg-blue-500 transition-colors shadow-lg shadow-accent/30">Start free trial</a>
+        </div>
+        {/* Pro Yearly */}
+        <div className="reveal reveal-delay-3 bg-white rounded-3xl p-8 border border-gray-100 shadow-sm text-left flex flex-col">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm font-semibold text-muted">Pro Yearly</p>
+              <span className="text-xs bg-income/10 text-income font-bold px-2 py-0.5 rounded-full">Save 40%</span>
+            </div>
+            <div className="flex items-baseline gap-1 mb-1"><span className="text-4xl font-black text-navy">$29</span><span className="text-muted text-sm">/year</span></div>
+            <p className="text-sm" style={{color: '#6b7280'}}>Best value for committed savers</p>
+          </div>
+          <ul className="space-y-3 mb-8 flex-1">
+            <li className="flex items-center gap-2 text-sm font-medium text-navy"><span className="tick">✓</span> Everything in Pro</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> Save 40% vs monthly</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> Priority support</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> Early access to features</li>
+            <li className="flex items-center gap-2 text-sm text-gray-700"><span className="tick">✓</span> Offline AI mode</li>
+          </ul>
+          <a href="#cta" className="btn-scale block text-center border-2 border-income text-income font-semibold py-3.5 rounded-2xl hover:bg-income hover:text-white transition-all">Best value →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ═══════════════════════════════════════════
+       SECTION 9: FAQ
+  ═══════════════════════════════════════════ */}
+  <section id="faq" className="bg-white py-24 px-6">
+    <div className="max-w-3xl mx-auto">
+      <div className="text-center mb-14">
+        <div className="badge-pill bg-amber-50 text-amber-600 border border-amber-100 mx-auto reveal">❓ FAQ</div>
+        <h2 className="font-bold text-navy reveal" style={{fontSize: 'clamp(26px,4vw,36px)', letterSpacing: '-0.5px'}}>Questions? Answered.</h2>
+      </div>
+      <div className="space-y-3 reveal">
+        {/* FAQ Item 1 */}
+        <div className="faq-item bg-gray-50 rounded-2xl border border-gray-100">
+          <button className="faq-btn w-full flex items-center justify-between px-6 py-5 text-left" aria-expanded="false" onClick={handleFaqToggle}>
+            <h3 className="font-semibold text-navy text-base">Is BudgetBuddy really free?</h3>
+            <svg className="faq-chevron w-5 h-5 text-muted flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div className="faq-answer px-6 pb-5 text-muted text-sm leading-relaxed">Yes — the free plan is free forever. No hidden fees, no trial periods, no credit card needed. You get voice input, AI assistant, charts, and the borrow tracker at no cost.</div>
+        </div>
+        {/* FAQ Item 2 */}
+        <div className="faq-item bg-gray-50 rounded-2xl border border-gray-100">
+          <button className="faq-btn w-full flex items-center justify-between px-6 py-5 text-left" aria-expanded="false" onClick={handleFaqToggle}>
+            <h3 className="font-semibold text-navy text-base">Does it connect to my bank?</h3>
+            <svg className="faq-chevron w-5 h-5 text-muted flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div className="faq-answer px-6 pb-5 text-muted text-sm leading-relaxed">No — BudgetBuddy uses manual entry only. Your bank credentials and financial accounts are never requested. Your data stays completely private and secure on your device.</div>
+        </div>
+        {/* FAQ Item 3 */}
+        <div className="faq-item bg-gray-50 rounded-2xl border border-gray-100">
+          <button className="faq-btn w-full flex items-center justify-between px-6 py-5 text-left" aria-expanded="false" onClick={handleFaqToggle}>
+            <h3 className="font-semibold text-navy text-base">How does voice input work?</h3>
+            <svg className="faq-chevron w-5 h-5 text-muted flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div className="faq-answer px-6 pb-5 text-muted text-sm leading-relaxed">BudgetBuddy uses your phone's built-in speech recognition — the same tech that powers your keyboard's voice dictation. Just tap the mic, say your transaction, and it's logged. It works best on Chrome and most Android browsers.</div>
+        </div>
+        {/* FAQ Item 4 */}
+        <div className="faq-item bg-gray-50 rounded-2xl border border-gray-100">
+          <button className="faq-btn w-full flex items-center justify-between px-6 py-5 text-left" aria-expanded="false" onClick={handleFaqToggle}>
+            <h3 className="font-semibold text-navy text-base">What is the borrow/lend tracker?</h3>
+            <svg className="faq-chevron w-5 h-5 text-muted flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div className="faq-answer px-6 pb-5 text-muted text-sm leading-relaxed">It's a personal IOU ledger. Record money you've lent or borrowed — the person's name, amount, date, and reason. Mark it settled when you're paid back. No more awkward "do you remember you owe me?" moments.</div>
+        </div>
+        {/* FAQ Item 5 */}
+        <div className="faq-item bg-gray-50 rounded-2xl border border-gray-100">
+          <button className="faq-btn w-full flex items-center justify-between px-6 py-5 text-left" aria-expanded="false" onClick={handleFaqToggle}>
+            <h3 className="font-semibold text-navy text-base">Does it work on iPhone and Android?</h3>
+            <svg className="faq-chevron w-5 h-5 text-muted flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div className="faq-answer px-6 pb-5 text-muted text-sm leading-relaxed">Yes — BudgetBuddy is a PWA (Progressive Web App). Open it in your phone's browser and tap "Add to Home Screen." It installs like a native app on both iOS and Android, with no app store download required.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ═══════════════════════════════════════════
+       SECTION 10: FINAL CTA
+  ═══════════════════════════════════════════ */}
+  <section id="cta" className="py-28 px-6" style={{background: '#1a1a2e'}}>
+    <div className="max-w-2xl mx-auto text-center">
+      <h2 className="text-white font-black mb-5 reveal" style={{fontSize: 'clamp(28px,5vw,44px)', letterSpacing: '-1px', lineHeight: '1.15'}}>
+        Take control of your <span style={{color: '#5DCAA5'}}>money today</span>
+      </h2>
+      <p className="mb-10 reveal reveal-delay-1" style={{color: 'rgba(255,255,255,0.55)', fontSize: '18px', lineHeight: '1.7'}}>
+        Join thousands of students and workers who finally know where their money goes.
+      </p>
+      {/* Email Form */}
+      <form id="cta-form" className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto mb-5 reveal reveal-delay-2" noValidate onSubmit={handleEmailSubmit}>
+        <label for="cta-email" className="sr-only">Your email address</label>
+        <input
+          type="email"
+          id="cta-email"
+          name="email"
+          placeholder="Enter your email address"
+          className="flex-1 px-5 py-4 rounded-2xl bg-white/10 text-white placeholder-white/30 border border-white/10 focus:border-accent outline-none transition-colors text-base"
+          autoComplete="email"
+          required
+        />
+        <button type="submit" className="btn-scale bg-accent text-white font-semibold px-7 py-4 rounded-2xl shadow-lg shadow-accent/30 hover:bg-blue-500 transition-colors whitespace-nowrap">
+          Get free access →
+        </button>
+      </form>
+      <p id="email-error" className="text-expense text-sm mb-3" style={{display: 'none'}}></p>
+      <p className="text-sm reveal reveal-delay-3" style={{color: 'rgba(255,255,255,0.3)'}}>
+        No credit card &nbsp;·&nbsp; Installs in 30 seconds &nbsp;·&nbsp; Cancel anytime
+      </p>
+    </div>
+  </section>
+
+  </main>
+
+  {/* ═══════════════════════════════════════════
+       SECTION 11: FOOTER
+  ═══════════════════════════════════════════ */}
+  <footer className="py-12 px-6" style={{background: '#1a1a2e', borderTop: '1px solid rgba(255,255,255,0.08)'}} role="contentinfo">
+    <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+      {/* Logo + tagline */}
+      <div className="text-center md:text-left">
+        <div className="flex items-center gap-2 justify-center md:justify-start mb-2">
+          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-white text-sm">💰</div>
+          <span className="text-white font-bold">BudgetBuddy</span>
+        </div>
+        <p style={{color: 'rgba(255,255,255,0.3)', fontSize: '13px'}}>Your money. Your control.</p>
+      </div>
+      {/* Nav links */}
+      <nav className="flex flex-wrap justify-center gap-6" aria-label="Footer navigation">
+        <a href="#solutions" className="text-white/40 hover:text-white text-sm transition-colors">Features</a>
+        <a href="#pricing" className="text-white/40 hover:text-white text-sm transition-colors">Pricing</a>
+        <a href="#faq" className="text-white/40 hover:text-white text-sm transition-colors">FAQ</a>
+        <a href="#" className="text-white/40 hover:text-white text-sm transition-colors">Privacy</a>
+        <a href="#" className="text-white/40 hover:text-white text-sm transition-colors">Terms</a>
+      </nav>
+      {/* Right */}
+      <div className="text-center md:text-right">
+        <p style={{color: 'rgba(255,255,255,0.25)', fontSize: '13px'}}>Made with ❤️ for students everywhere</p>
+        <p style={{color: 'rgba(255,255,255,0.2)', fontSize: '12px', marginTop: '4px'}}>© 2026 BudgetBuddy</p>
+      </div>
+    </div>
+  </footer>
+
+  
+    </div>
+  );
+}

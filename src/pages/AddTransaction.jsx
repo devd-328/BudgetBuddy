@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
@@ -29,7 +30,7 @@ export default function AddTransaction() {
   const [loading, setLoading] = useState(false)
 
   const amountRef = useRef(null)
-  const currency = profile?.currency || '$'
+  const currency = profile?.currency || 'Rs'
 
   // Focus amount on mount
   useEffect(() => {
@@ -130,7 +131,12 @@ export default function AddTransaction() {
   return (
     <div className="page-enter pb-24">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-bold">Add New</h1>
+        <div className="flex items-center gap-3">
+           <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors active:scale-95 text-white/50 hover:text-white">
+             <ArrowLeft size={18} />
+           </button>
+           <h1 className="text-xl font-bold">Add New</h1>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>

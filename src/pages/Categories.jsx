@@ -12,7 +12,7 @@ export default function Categories() {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
   const { categories, budgets, spentMap, loading, refetch } = useCategoriesAndBudgets(user?.id)
-  const currency = profile?.currency || '$'
+  const currency = profile?.currency || 'Rs'
 
   const [activeView, setActiveView] = useState('list') // 'list' | 'edit-category' | 'edit-budget'
   const [selectedCat, setSelectedCat] = useState(null)

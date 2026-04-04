@@ -1,15 +1,7 @@
 # BudgetBuddy PWA — Task List
 
 ## Current Task
-Build MODULE 1 — Project Setup
-- Scaffold React 18 + Vite + Tailwind CSS
-- Install dependencies: react-router-dom, @supabase/supabase-js, chart.js, react-chartjs-2
-- Create folder structure: /src/components, /pages, /hooks, /lib, /context, /assets
-- Configure PWA manifest with name "BudgetBuddy" and theme_color #1a1a2e
-- Set up service worker for offline support
-- Configure React Router with placeholder pages for: Home, Analytics, Add, Borrow, AI, Settings
-- Set up Supabase client in /src/lib/supabase.js
-- Output: running app on localhost with working router and blank pages
+Before going to module 10 i want some changes in desktop as desktop view should be diffwerent then mobile and you can see this in image as desktop users won't feel good to use this webapplication and i want ypou to make it fully responsive for mobiles, desktops, or any other browsers and kindly go through everything that causing problems
 
 ## Completed Tasks
 (Ralph will move tasks here as they finish)

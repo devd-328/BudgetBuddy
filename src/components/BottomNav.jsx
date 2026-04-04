@@ -5,6 +5,7 @@ import {
   PlusCircle,
   Handshake,
   Bot,
+  Settings
 } from 'lucide-react'
 
 const tabs = [
@@ -12,14 +13,23 @@ const tabs = [
   { to: '/analytics', icon: BarChart2,   label: 'Analytics' },
   { to: '/add',       icon: PlusCircle,  label: 'Add'       },
   { to: '/borrow',    icon: Handshake,   label: 'Borrow'    },
-  { to: '/ai',        icon: Bot,         label: 'AI'        },
+  { to: '/settings',  icon: Settings,    label: 'Settings'  },
 ]
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-mobile
-                    bg-surface border-t border-white/10 pb-safe z-50">
-      <div className="flex items-stretch h-16">
+    <>
+      {/* Floating AI Button in corner above Settings */}
+      <NavLink 
+        to="/ai"
+        className="fixed bottom-20 right-4 w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white shadow-lg shadow-accent/40 z-50 md:hidden hover:scale-105 transition-transform"
+      >
+        <Bot size={22} strokeWidth={2.5} />
+      </NavLink>
+
+      <nav className="fixed bottom-0 left-0 w-full md:hidden
+                      bg-surface border-t border-white/10 pb-safe z-50">
+        <div className="flex items-stretch h-16">
         {tabs.map(({ to, icon: Icon, label }) =>
           label === 'Add' ? (
             /* Centre FAB-style Add button */
@@ -63,6 +73,7 @@ export default function BottomNav() {
           )
         )}
       </div>
-    </nav>
+      </nav>
+    </>
   )
 }

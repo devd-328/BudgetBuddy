@@ -5,7 +5,8 @@ CREATE TABLE profiles (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
   name TEXT NOT NULL,
-  currency TEXT DEFAULT '$',
+  currency TEXT DEFAULT 'Rs',
+  avatar_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

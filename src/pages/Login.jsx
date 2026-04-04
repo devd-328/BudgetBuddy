@@ -38,6 +38,12 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-navy flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
+        {/* Back Button */}
+        <Link to="/" className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-8 text-sm transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+          Back to home
+        </Link>
+
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="w-16 h-16 bg-accent rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-accent/30">

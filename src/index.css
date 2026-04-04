@@ -55,23 +55,29 @@
 }
 
 @layer components {
-  /* App shell — mobile-first centered layout */
+  /* App shell — responsive layout */
   .app-shell {
-    @apply w-full max-w-mobile mx-auto flex flex-col min-h-dvh relative;
+    @apply w-full mx-auto flex flex-col md:flex-row min-h-dvh relative;
     background: #1a1a2e;
+    max-width: 1440px;
   }
 
   /* Scrollable page content above bottom nav */
   .page-content {
-    @apply flex-1 overflow-y-auto pb-24 px-4 pt-4;
+    @apply flex-1 overflow-y-auto pb-24 px-4 pt-4 md:pb-8 md:px-8 w-full relative;
+    background: #1a1a2e;
+  }
+  
+  .content-container {
+    @apply w-full max-w-6xl mx-auto p-4 md:p-12 pb-24 md:pb-12;
   }
 
   /* Cards */
   .card {
-    @apply bg-surface-card rounded-3xl p-4;
+    @apply bg-surface-card rounded-3xl p-4 border border-white/5 shadow-sm;
   }
   .card-navy {
-    @apply bg-navy-card rounded-3xl p-4;
+    @apply bg-navy-card rounded-3xl p-6 border border-white/10 shadow-xl;
   }
 
   /* Buttons */
@@ -181,6 +187,42 @@
 
 .page-enter {
   animation: slideUp 0.25s ease-out;
+}
+
+/* Dropdown animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-in {
+  animation-duration: 200ms;
+  animation-fill-mode: forwards;
+}
+.fade-in {
+  animation-name: fadeIn;
+}
+.zoom-in {
+  animation-name: zoomIn;
+}
+
+/* File Dropzone */
+.file-dropzone {
+  @apply relative border-2 border-dashed border-white/10 rounded-2xl p-8 
+         flex flex-col items-center justify-center gap-3 transition-all duration-300
+         bg-white/5 cursor-pointer overflow-hidden;
+}
+.file-dropzone:hover {
+  @apply border-accent/40 bg-accent/5;
+}
+.file-dropzone.dragging {
+  @apply border-accent bg-accent/10 scale-[1.02] shadow-lg shadow-accent/20;
+}
+.file-dropzone-preview {
+  @apply w-24 h-24 rounded-full object-cover border-2 border-white/20 shadow-xl;
 }
 
 /* Pulse glow for accent elements */
