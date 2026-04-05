@@ -5,15 +5,55 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#0A0A0F" />
-    <meta name="description" content="BudgetBuddy — Smart personal finance tracker. Track expenses, income, debts, and get AI-powered insights." />
+    <meta name="description" content="BudgetBuddy — Smart personal finance tracker for Pakistani students. Track expenses, income, debts, and get AI-powered insights." />
+    <meta name="keywords" content="budget tracker, expense manager, personal finance, Pakistan, student budget, AI finance assistant" />
+    <meta name="author" content="BudgetBuddy Team" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://budgetbuddy.app/" />
+    <meta property="og:title" content="BudgetBuddy — Smart Personal Finance Tracker" />
+    <meta property="og:description" content="Master your money with BudgetBuddy. The smartest way for students in Pakistan to track every rupee." />
+    <meta property="og:image" content="/icons/icon-512.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://budgetbuddy.app/" />
+    <meta property="twitter:title" content="BudgetBuddy — Smart Personal Finance Tracker" />
+    <meta property="twitter:description" content="Master your money with BudgetBuddy. The smartest way for students in Pakistan to track every rupee." />
+    <meta property="twitter:image" content="/icons/icon-512.png" />
+
+    <!-- PWA & Mobile -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="BudgetBuddy" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    
     <title>BudgetBuddy — Smart Finance Tracker</title>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "BudgetBuddy",
+      "url": "https://budgetbuddy.app",
+      "description": "Smart personal finance tracker for Pakistani students.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web, Android, iOS",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "PKR"
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

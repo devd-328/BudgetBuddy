@@ -115,15 +115,22 @@
   .page-content {
     flex: 1;
     width: 100%;
-    max-width: 430px;
+    max-width: 450px;
     margin-left: auto;
     margin-right: auto;
     padding: 1.5rem 1rem;
+    transition: max-width 0.3s var(--ease-out-expo);
   }
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     .page-content {
-      max-width: 1200px;
+      max-width: 800px;
       padding: 2rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .page-content {
+      max-width: 1100px;
+      padding: 3rem;
     }
   }
 

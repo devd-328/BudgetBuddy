@@ -55,4 +55,12 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        // We'll rely on lazy() imports in App.jsx for now
+      },
+    },
+  },
 })
