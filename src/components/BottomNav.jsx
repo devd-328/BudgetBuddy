@@ -19,20 +19,22 @@ const tabs = [
 export default function BottomNav() {
   return (
     <>
-      {/* Floating AI Button in corner above Settings */}
-      <NavLink 
+      {/* Floating AI Button */}
+      <NavLink
         to="/ai"
-        className="fixed bottom-20 right-4 w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white shadow-lg shadow-accent/40 z-50 md:hidden hover:scale-105 transition-transform"
+        className="fixed bottom-20 right-4 w-11 h-11 bg-accent rounded-full flex items-center justify-center 
+                   text-txt-inverted shadow-glow-accent z-50 md:hidden 
+                   hover:scale-105 active:scale-95 transition-transform duration-fast ease-out-back"
       >
-        <Bot size={22} strokeWidth={2.5} />
+        <Bot size={20} strokeWidth={2} />
       </NavLink>
 
       <nav className="fixed bottom-0 left-0 w-full md:hidden
-                      bg-surface border-t border-white/10 pb-safe z-50">
+                      bg-surface/95 backdrop-blur-xl border-t border-border-subtle pb-safe z-50">
         <div className="flex items-stretch h-16">
         {tabs.map(({ to, icon: Icon, label }) =>
           label === 'Add' ? (
-            /* Centre FAB-style Add button */
+            /* Centre FAB */
             <NavLink
               key={to}
               to={to}
@@ -41,14 +43,14 @@ export default function BottomNav() {
             >
               {({ isActive }) => (
                 <div
-                  className={`flex flex-col items-center justify-center w-14 h-14 rounded-full
-                    transition-all duration-200
+                  className={`flex items-center justify-center w-12 h-12 rounded-2xl
+                    transition-[transform,box-shadow] duration-fast ease-out-expo
                     ${isActive
-                      ? 'bg-accent shadow-lg shadow-accent/40 glow-pulse'
-                      : 'bg-accent/80 shadow-md shadow-accent/20'
+                      ? 'bg-accent shadow-glow-accent scale-110'
+                      : 'bg-accent shadow-md'
                     }`}
                 >
-                  <Icon size={26} strokeWidth={2.5} className="text-white" />
+                  <Icon size={22} strokeWidth={2} className="text-txt-inverted" />
                 </div>
               )}
             </NavLink>
@@ -59,14 +61,18 @@ export default function BottomNav() {
               end={to === '/'}
               id={`nav-${label.toLowerCase()}`}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center flex-1 gap-0.5 transition-colors duration-200
-                ${isActive ? 'text-accent' : 'text-white/40'}`
+                `flex flex-col items-center justify-center flex-1 gap-1 
+                 transition-colors duration-fast
+                 ${isActive ? 'text-accent' : 'text-txt-muted'}`
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
-                  <span className="text-[10px] font-medium">{label}</span>
+                  <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+                  <span className="text-2xs font-medium">{label}</span>
+                  {isActive && (
+                    <div className="absolute bottom-1 w-1 h-1 rounded-full bg-accent" />
+                  )}
                 </>
               )}
             </NavLink>

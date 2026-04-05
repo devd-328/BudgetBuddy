@@ -1,26 +1,33 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Mic, Utensils, Bus, BookOpen, Heart, ShoppingBag, Gamepad2, Zap, Plus } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 
+import SegmentedControl from '../components/ui/SegmentedControl'
+
 const CATEGORIES = [
-  { name: 'Food', icon: '🍔' },
-  { name: 'Transport', icon: '🚌' },
-  { name: 'Education', icon: '📚' },
-  { name: 'Health', icon: '💊' },
-  { name: 'Shopping', icon: '🛍' },
-  { name: 'Entertainment', icon: '🎮' },
-  { name: 'Bills', icon: '💡' },
-  { name: 'Custom', icon: '➕' },
+  { name: 'Food',          icon: Utensils,    color: '#34D399' },
+  { name: 'Transport',     icon: Bus,         color: '#60A5FA' },
+  { name: 'Education',     icon: BookOpen,    color: '#FB923C' },
+  { name: 'Health',        icon: Heart,       color: '#FB7185' },
+  { name: 'Shopping',      icon: ShoppingBag, color: '#FBBF24' },
+  { name: 'Entertainment', icon: Gamepad2,    color: '#A78BFA' },
+  { name: 'Bills',         icon: Zap,         color: '#2DD4BF' },
+  { name: 'Custom',        icon: Plus,        color: '#5A5A6E' },
+]
+
+const TYPE_OPTIONS = [
+  { value: 'expense', label: 'Expense' },
+  { value: 'income', label: 'Income' },
 ]
 
 export default function AddTransaction() {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
 
-  const [type, setType] = useState('expense') // 'expense' | 'income'
+  const [type, setType] = useState('expense')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0].name)
   const [description, setDescription] = useState('')
@@ -32,16 +39,15 @@ export default function AddTransaction() {
   const amountRef = useRef(null)
   const currency = profile?.currency || 'Rs'
 
-  // Focus amount on mount
   useEffect(() => {
     if (amountRef.current) amountRef.current.focus()
   }, [])
 
-  // Speech Recognition using native browser API
+  // Voice Input
   const startVoiceInput = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
-      toast.error('Voice input is not supported in this browser. Try Chrome/Safari.')
+      toast.error('Voice input is not supported in this browser.')
       return
     }
 
@@ -57,43 +63,32 @@ export default function AddTransaction() {
 
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript
-      // Extract numbers for amount
       const numMatch = transcript.match(/\d+([.,]\d+)?/)
-      
-      let parsedAmount = amount
-      let parsedDesc = transcript
 
       if (numMatch) {
-         parsedAmount = numMatch[0].replace(',', '.')
-         // Strip out the amount and words like 'for', 'cost', 'bucks'
-         let rawDesc = transcript.replace(numMatch[0], '')
-              .replace(/\b(for|cost|bucks|rupees|dollars|rs)\b/gi, '').trim()
-         
-         // Clean up punctuation if it got left behind
-         rawDesc = rawDesc.replace(/^[^a-zA-Z0-9]+/, '').trim()
-         
-         parsedDesc = rawDesc.charAt(0).toUpperCase() + rawDesc.slice(1)
-         
-         setAmount(parsedAmount)
-         setDescription(parsedDesc || 'Voice Input')
-         toast.success('Successfully parsed amount!')
+        const parsedAmount = numMatch[0].replace(',', '.')
+        let rawDesc = transcript.replace(numMatch[0], '')
+          .replace(/\b(for|cost|bucks|rupees|dollars|rs)\b/gi, '').trim()
+        rawDesc = rawDesc.replace(/^[^a-zA-Z0-9]+/, '').trim()
+        const parsedDesc = rawDesc.charAt(0).toUpperCase() + rawDesc.slice(1)
+
+        setAmount(parsedAmount)
+        setDescription(parsedDesc || 'Voice Input')
+        toast.success('Parsed successfully!')
       } else {
-         setDescription(transcript.charAt(0).toUpperCase() + transcript.slice(1))
-         toast.error('Try speaking a number next time.')
+        setDescription(transcript.charAt(0).toUpperCase() + transcript.slice(1))
+        toast.error('Try speaking a number next time.')
       }
     }
 
     recognition.onerror = (event) => {
-       console.error('Speech recognition error', event.error)
-       if (event.error !== 'no-speech') {
-         toast.error('Microphone access denied or error occurred.')
-       }
+      console.error('Speech recognition error', event.error)
+      if (event.error !== 'no-speech') {
+        toast.error('Microphone access denied or error occurred.')
+      }
     }
 
-    recognition.onend = () => {
-      setIsListening(false)
-    }
-
+    recognition.onend = () => setIsListening(false)
     recognition.start()
   }
 
@@ -105,19 +100,9 @@ export default function AddTransaction() {
     setLoading(true)
     try {
       const { error } = await supabase.from('transactions').insert([
-        {
-          user_id: user.id,
-          type,
-          amount: Number(amount),
-          category,
-          description,
-          note,
-          date,
-        }
+        { user_id: user.id, type, amount: Number(amount), category, description, note, date }
       ])
-
       if (error) throw error
-
       toast.success('Transaction added!')
       navigate('/')
     } catch (err) {
@@ -130,77 +115,88 @@ export default function AddTransaction() {
 
   return (
     <div className="page-enter pb-24">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-           <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors active:scale-95 text-white/50 hover:text-white">
-             <ArrowLeft size={18} />
-           </button>
-           <h1 className="text-xl font-bold">Add New</h1>
-        </div>
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-8">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 rounded-xl bg-interactive border border-border-subtle 
+                     hover:bg-elevated hover:border-border transition-[background,border-color] duration-fast
+                     text-txt-muted hover:text-txt-primary"
+        >
+          <ArrowLeft size={16} />
+        </button>
+        <h1 className="text-xl font-bold tracking-tight">Add New</h1>
       </div>
 
       <form onSubmit={handleSubmit}>
-        
-        {/* Type Toggle */}
-        <div className="flex bg-white/5 rounded-full p-1 mb-8">
-          <button
-            type="button"
-            onClick={() => setType('expense')}
-            className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${type === 'expense' ? 'bg-expense text-white' : 'text-white/50'}`}
-          >
-            Expense
-          </button>
-          <button
-            type="button"
-            onClick={() => setType('income')}
-            className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${type === 'income' ? 'bg-income text-white' : 'text-white/50'}`}
-          >
-            Income
-          </button>
-        </div>
 
-        {/* Hero Amount Input */}
-        <div className="text-center mb-8 relative">
-          <p className="text-white/50 text-sm mb-2 drop-shadow">Amount</p>
-          <div className="flex justify-center items-center">
-            <span className="text-4xl font-bold text-white/40 mr-2">{currency}</span>
+        {/* Type Toggle */}
+        <SegmentedControl
+          options={TYPE_OPTIONS}
+          value={type}
+          onChange={setType}
+          className="mb-8"
+        />
+
+        {/* Hero Amount */}
+        <div className="text-center mb-10">
+          <p className="overline mb-3">Amount</p>
+          <div className="flex justify-center items-baseline">
+            <span className="text-4xl font-bold text-txt-muted mr-2 font-mono">{currency}</span>
             <input
               ref={amountRef}
               type="number"
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="bg-transparent text-5xl font-bold text-white outline-none w-1/2 text-left placeholder:text-white/20"
-              placeholder="0.00"
+              className="bg-transparent text-5xl font-black text-txt-bright font-mono tracking-tighter 
+                         outline-none w-40 text-left placeholder:text-txt-muted/30"
+              placeholder="0"
               required
             />
           </div>
+          {/* Subtle accent line under amount */}
+          <div className={`mx-auto mt-2 h-px w-32 ${type === 'expense' ? 'bg-expense/30' : 'bg-income/30'}`} />
         </div>
 
-        {/* Categories Horizontal Scroll */}
+        {/* Categories */}
         <div className="mb-6">
-          <p className="text-sm font-medium mb-3">Category</p>
-          <div className="flex overflow-x-auto pb-4 gap-3 snap-x scrollbar-hide">
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat.name}
-                type="button"
-                onClick={() => setCategory(cat.name)}
-                className={`snap-start shrink-0 flex flex-col items-center p-3 rounded-2xl border transition-all ${
-                  category === cat.name 
-                    ? 'bg-white/10 border-accent text-white shadow-lg shadow-accent/20' 
-                    : 'bg-white/5 border-transparent text-white/60'
-                }`}
-                style={{ width: '80px' }}
-              >
-                <span className="text-2xl mb-1">{cat.icon}</span>
-                <span className="text-[10px] w-full truncate text-center">{cat.name}</span>
-              </button>
-            ))}
+          <p className="overline mb-3">Category</p>
+          <div className="flex overflow-x-auto pb-3 gap-2 scrollbar-hide">
+            {CATEGORIES.map(cat => {
+              const Icon = cat.icon
+              const isSelected = category === cat.name
+
+              return (
+                <button
+                  key={cat.name}
+                  type="button"
+                  onClick={() => setCategory(cat.name)}
+                  className={`snap-start shrink-0 flex flex-col items-center gap-1.5 p-3 rounded-xl border w-[72px]
+                    transition-[background,border-color,transform] duration-fast ease-out-expo
+                    ${isSelected
+                      ? 'bg-card border-accent/40 shadow-glow-accent'
+                      : 'bg-interactive/50 border-border-subtle hover:bg-interactive'
+                    }`}
+                >
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center
+                      transition-transform duration-fast ${isSelected ? 'scale-110' : ''}`}
+                    style={{ backgroundColor: `${cat.color}${isSelected ? '20' : '10'}` }}
+                  >
+                    <Icon size={16} style={{ color: cat.color }} strokeWidth={isSelected ? 2 : 1.5} />
+                  </div>
+                  <span className={`text-2xs truncate w-full text-center font-medium
+                    ${isSelected ? 'text-txt-primary' : 'text-txt-muted'}`}>
+                    {cat.name}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
-        {/* Details Fields */}
+        {/* Form Fields */}
         <div className="space-y-4 mb-8">
           <div className="relative">
             <input
@@ -211,38 +207,47 @@ export default function AddTransaction() {
               className="input-field pr-12"
               required
             />
-            {/* Voice Input Button placed inside Description input for convenience */}
             <button
-               type="button"
-               onClick={startVoiceInput}
-               className={`absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-all ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-white/10 text-white/50'}`}
+              type="button"
+              onClick={startVoiceInput}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center
+                transition-[background,color] duration-fast
+                ${isListening
+                  ? 'bg-expense/20 text-expense animate-pulse'
+                  : 'bg-interactive text-txt-muted hover:text-txt-primary'
+                }`}
             >
-               <span className="text-sm">🎙️</span>
+              <Mic size={16} />
             </button>
           </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-             <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="input-field w-full text-white/80"
-                required
-             />
-             <input
-                type="text"
-                placeholder="Note (Optional)"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="input-field"
-             />
+
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="input-field font-mono text-sm"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Note (Optional)"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="input-field"
+            />
           </div>
         </div>
 
-        <button type="submit" className="btn-primary w-full h-[48px] flex items-center justify-center" disabled={loading}>
-            {loading ? <span className="loader shrink-0 inline-block w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></span> : 'Save Transaction'}
+        <button
+          type="submit"
+          className="btn-primary w-full h-12 flex items-center justify-center text-sm"
+          disabled={loading}
+        >
+          {loading
+            ? <div className="w-5 h-5 border-2 border-canvas/20 border-t-canvas rounded-full animate-spin" />
+            : 'Save Transaction'}
         </button>
-
       </form>
     </div>
   )

@@ -18,47 +18,57 @@ const tabs = [
 
 export default function Sidebar() {
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-surface border-r border-white/5 h-screen sticky top-0 shrink-0">
-      <div className="p-6 flex items-center gap-3 border-b border-white/5 mb-6">
-         <span className="text-2xl drop-shadow-md">💰</span>
-         <h1 className="text-xl font-bold tracking-tight">BudgetBuddy</h1>
+    <aside className="hidden md:flex flex-col w-60 bg-surface border-r border-border-subtle h-screen sticky top-0 shrink-0">
+      {/* Brand */}
+      <div className="px-6 py-5 flex items-center gap-3 border-b border-border-subtle">
+         <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+           <span className="text-accent font-bold text-sm font-mono">B</span>
+         </div>
+         <h1 className="text-base font-bold tracking-tight text-txt-bright">BudgetBuddy</h1>
       </div>
 
-      <nav className="flex-1 px-4 space-y-2">
-        {tabs.map(({ to, icon: Icon, label, primary }) =>
+      <nav className="flex-1 px-3 py-4 space-y-1">
+        {tabs.map(({ to, icon: Icon, label }) =>
            <NavLink
               key={to}
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                 `flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 ${
-                    primary 
-                      ? isActive ? 'bg-accent text-white shadow-lg shadow-accent/20 font-bold' : 'bg-accent/80 hover:bg-accent text-white shadow-md font-bold'
-                      : isActive ? 'bg-white/10 text-accent font-semibold' : 'text-white/40 hover:bg-white/5 hover:text-white/80 font-medium'
+                 `flex items-center gap-3 px-3 py-2.5 rounded-xl 
+                  transition-[background,color] duration-fast ease-out-expo text-sm ${
+                    isActive 
+                      ? 'bg-interactive text-txt-primary font-medium' 
+                      : 'text-txt-muted hover:bg-interactive/50 hover:text-txt-secondary'
                  }`
               }
            >
               {({ isActive }) => (
                  <>
-                    <Icon size={20} strokeWidth={isActive || primary ? 2.5 : 2} />
-                    <span className="text-sm">{label}</span>
+                    <Icon size={18} strokeWidth={isActive ? 2 : 1.5} />
+                    <span>{label}</span>
+                    {isActive && (
+                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-accent" />
+                    )}
                  </>
               )}
            </NavLink>
         )}
       </nav>
 
-      <div className="p-4 border-t border-white/5">
+      <div className="px-3 py-4 border-t border-border-subtle">
          <NavLink
             to="/settings"
             className={({ isActive }) =>
-               `flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 ${
-                  isActive ? 'bg-white/10 text-white font-semibold' : 'text-white/40 hover:bg-white/5 hover:text-white/80 font-medium'
+               `flex items-center gap-3 px-3 py-2.5 rounded-xl 
+                transition-[background,color] duration-fast ease-out-expo text-sm ${
+                  isActive 
+                    ? 'bg-interactive text-txt-primary font-medium' 
+                    : 'text-txt-muted hover:bg-interactive/50 hover:text-txt-secondary'
                }`
             }
          >
-            <Settings size={20} strokeWidth={2} />
-            <span className="text-sm">Settings</span>
+            <Settings size={18} strokeWidth={1.5} />
+            <span>Settings</span>
          </NavLink>
       </div>
     </aside>

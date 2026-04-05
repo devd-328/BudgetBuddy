@@ -1,244 +1,319 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useAnalyticsData } from '../hooks/useAnalyticsData'
 
+import SegmentedControl from '../components/ui/SegmentedControl'
+import AmountDisplay from '../components/ui/AmountDisplay'
+import ProgressBar from '../components/ui/ProgressBar'
+import Skeleton from '../components/ui/Skeleton'
+import Card from '../components/ui/Card'
+
+// Chart.js — only for Line chart
 import {
   Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
+  CategoryScale, LinearScale, PointElement, LineElement,
+  Title, Tooltip, Legend, Filler
 } from 'chart.js'
-import { Doughnut, Line } from 'react-chartjs-2'
+import { Line } from 'react-chartjs-2'
 
-// Register Chart.js elements
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-)
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
+
+const PERIOD_OPTIONS = [
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+  { value: 'quarter', label: 'Quarter' },
+  { value: 'year', label: 'Year' },
+]
+
+// ─── Custom SVG Doughnut ───
+function SVGDoughnut({ data, totalSpend, currency }) {
+  const [hovered, setHovered] = useState(null)
+  const radius = 70
+  const strokeWidth = 10
+  const center = 90
+  const circumference = 2 * Math.PI * radius
+
+  const segments = useMemo(() => {
+    if (totalSpend === 0) return []
+    let offset = -circumference / 4 // Start from 12 o'clock
+    return data.map((d, i) => {
+      const ratio = d.amount / totalSpend
+      const arcLength = ratio * circumference
+      const segment = { ...d, arcLength, offset, ratio }
+      offset += arcLength
+      return segment
+    })
+  }, [data, totalSpend, circumference])
+
+  return (
+    <div className="relative">
+      <svg width={center * 2} height={center * 2} className="mx-auto block">
+        {/* Background ring */}
+        <circle
+          cx={center} cy={center} r={radius}
+          fill="none" stroke="currentColor" strokeWidth={strokeWidth}
+          className="text-interactive"
+        />
+        {/* Data segments */}
+        {segments.map((seg, i) => (
+          <circle
+            key={i}
+            cx={center} cy={center} r={radius}
+            fill="none"
+            stroke={seg.color}
+            strokeWidth={hovered === i ? strokeWidth + 3 : strokeWidth}
+            strokeDasharray={`${seg.arcLength} ${circumference - seg.arcLength}`}
+            strokeDashoffset={-seg.offset}
+            strokeLinecap="round"
+            className="transition-[stroke-width] duration-fast ease-out-expo cursor-pointer"
+            style={{
+              animationDelay: `${i * 80}ms`,
+            }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          />
+        ))}
+      </svg>
+
+      {/* Center label */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <p className="overline mb-1">Total Spent</p>
+        <AmountDisplay value={totalSpend} currency={currency} size="lg" />
+      </div>
+
+      {/* Hover tooltip */}
+      {hovered !== null && segments[hovered] && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-elevated border border-border-subtle rounded-xl px-3 py-2 shadow-lg animate-fade-in pointer-events-none z-10">
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: segments[hovered].color }} />
+            <span className="text-xs font-medium text-txt-primary">{segments[hovered].name}</span>
+          </div>
+          <p className="font-mono text-sm font-bold text-txt-primary mt-0.5">
+            {currency}{segments[hovered].amount.toLocaleString()} ({Math.round(segments[hovered].ratio * 100)}%)
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Analytics() {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
-  const [period, setPeriod] = useState('month') // 'week' | 'month' | 'quarter' | 'year'
+  const [period, setPeriod] = useState('month')
   const { donutData, lineData, topCategory, budgetProgress, loading } = useAnalyticsData(user?.id, period)
 
   const currency = profile?.currency || 'Rs'
   const totalPeriodSpend = donutData.reduce((sum, d) => sum + d.amount, 0)
 
-  // 1. Doughnut Chart Config
-  const doughnutChartData = {
-    labels: donutData.map(d => d.name),
-    datasets: [
-      {
-        data: donutData.map(d => d.amount),
-        backgroundColor: donutData.map(d => d.color),
-        borderWidth: 0,
-        hoverOffset: 4
-      }
-    ]
-  }
-
-  const doughnutOptions = {
-    responsive: true,
-    cutout: '75%',
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#1a1a2e',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1,
-        callbacks: {
-          label: (ctx) => ` ${currency}${ctx.raw.toFixed(2)}`
-        }
-      }
-    }
-  }
-
-  // 2. Line Chart Config (6 Month History)
+  // Line Chart Config
   const lineChartData = {
     labels: lineData.labels,
     datasets: [
       {
         label: 'Income',
         data: lineData.income,
-        borderColor: '#5DCAA5', // Income Teal
-        backgroundColor: 'rgba(93, 202, 165, 0.1)',
-        fill: true,
+        borderColor: '#34D399',
+        backgroundColor: 'transparent',
+        borderDash: [6, 4],
         tension: 0.4,
         borderWidth: 2,
         pointRadius: 0,
-        pointHitRadius: 10
+        pointHitRadius: 10,
       },
       {
         label: 'Expense',
         data: lineData.expense,
-        borderColor: '#F0997B', // Expense Coral
-        backgroundColor: 'rgba(240, 153, 123, 0.1)',
-        fill: true,
+        borderColor: '#FB7185',
+        backgroundColor: 'transparent',
         tension: 0.4,
         borderWidth: 2,
         pointRadius: 0,
-        pointHitRadius: 10
-      }
-    ]
+        pointHitRadius: 10,
+      },
+    ],
   }
 
   const lineOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
+    interaction: { mode: 'index', intersect: false },
     scales: {
-      y: { display: false, beginAtZero: true },
-      x: { 
-        grid: { display: false, drawBorder: false },
-        ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { size: 10 } }
-      }
+      y: {
+        display: true,
+        beginAtZero: true,
+        grid: { color: 'rgba(58,58,72,0.2)', drawBorder: false },
+        ticks: {
+          color: '#5A5A6E',
+          font: { size: 10, family: 'JetBrains Mono' },
+          maxTicksLimit: 4,
+        },
+        border: { display: false },
+      },
+      x: {
+        grid: { display: false },
+        ticks: {
+          color: '#5A5A6E',
+          font: { size: 10, family: 'Inter' },
+        },
+        border: { display: false },
+      },
     },
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#1a1a2e',
+        backgroundColor: '#18181F',
+        titleColor: '#E8E8F0',
+        bodyColor: '#E8E8F0',
+        borderColor: 'rgba(58,58,72,0.4)',
+        borderWidth: 1,
+        titleFont: { family: 'Inter', size: 12 },
+        bodyFont: { family: 'JetBrains Mono', size: 12 },
+        padding: 12,
+        cornerRadius: 12,
+        displayColors: false,
         callbacks: {
-           label: (ctx) => ` ${ctx.dataset.label}: ${currency}${ctx.raw.toFixed(2)}`
-        }
-      }
-    }
+          label: (ctx) => ` ${ctx.dataset.label}: ${currency}${ctx.raw.toLocaleString()}`,
+        },
+      },
+    },
   }
 
   return (
     <div className="page-enter pb-24">
-      {/* Header & Tabs */}
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors active:scale-95 text-white/50 hover:text-white">
-          <ArrowLeft size={18} />
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 rounded-xl bg-interactive border border-border-subtle 
+                     hover:bg-elevated hover:border-border transition-[background,border-color] duration-fast
+                     text-txt-muted hover:text-txt-primary"
+        >
+          <ArrowLeft size={16} />
         </button>
-        <h1 className="text-xl font-bold">Analytics</h1>
+        <h1 className="text-xl font-bold tracking-tight">Analytics</h1>
       </div>
-      
-      <div className="flex bg-white/5 rounded-full p-1 mb-8">
-        {['week', 'month', 'quarter', 'year'].map(p => (
-           <button
-             key={p}
-             onClick={() => setPeriod(p)}
-             className={`flex-1 py-1.5 text-xs font-semibold rounded-full capitalize transition-all ${period === p ? 'bg-white/10 text-white shadow-sm' : 'text-white/40'}`}
-           >
-             {p}
-           </button>
-        ))}
-      </div>
+
+      {/* Period Control */}
+      <SegmentedControl
+        options={PERIOD_OPTIONS}
+        value={period}
+        onChange={setPeriod}
+        className="mb-8"
+      />
 
       {loading ? (
-        <div className="flex justify-center p-10">
-           <span className="loader shrink-0 inline-block w-8 h-8 border-4 border-white/20 border-t-accent rounded-full animate-spin"></span>
+        <div className="space-y-6">
+          <Skeleton variant="rect" height={220} />
+          <Skeleton variant="card" count={3} />
+          <Skeleton variant="rect" height={200} />
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          <div className="flex flex-col">
-              {/* Doughnut Chart Block */}
-              <div className="card-navy border border-white/10 mb-6 relative py-8">
-                 {donutData.length === 0 ? (
-                    <div className="text-center text-white/40 text-sm py-4">No structured expenses for this period.</div>
-                 ) : (
-                    <div className="relative w-48 h-48 mx-auto">
-                       <Doughnut data={doughnutChartData} options={doughnutOptions} />
-                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                          <p className="text-xs text-white/50">Total Spent</p>
-                          <p className="text-xl font-bold">{currency}{totalPeriodSpend.toFixed(0)}</p>
-                       </div>
-                    </div>
-                 )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 stagger-children">
 
-                 {/* Top Category Callout */}
-                 {topCategory && (
-                    <div className="mt-8 bg-white/5 rounded-2xl p-4 border border-white/5 flex items-center justify-between">
-                       <div>
-                          <p className="text-xs text-white/50 mb-1">Top Spend Category</p>
-                          <div className="flex items-center gap-2">
-                             <span className="w-3 h-3 rounded-full" style={{backgroundColor: topCategory.color}}></span>
-                             <p className="text-sm font-semibold">{topCategory.name}</p>
-                          </div>
-                       </div>
-                       <p className="text-lg font-bold text-expense">{currency}{topCategory.amount.toFixed(0)}</p>
-                    </div>
-                 )}
+          {/* ═══ Doughnut + Legend ═══ */}
+          <Card>
+            {donutData.length === 0 ? (
+              <div className="text-center text-txt-muted text-sm py-8">
+                No expenses for this period
               </div>
+            ) : (
+              <>
+                <SVGDoughnut
+                  data={donutData}
+                  totalSpend={totalPeriodSpend}
+                  currency={currency}
+                />
 
-               {/* Budget Progress Bounds */}
-               {budgetProgress.length > 0 && (
-                  <div className="mb-4 bg-white/5 p-5 rounded-2xl border border-white/5">
-                     <h2 className="text-sm font-semibold mb-3">Current Limits Overview</h2>
-                     <div className="space-y-4">
-                        {budgetProgress.map(cat => {
-                           let percent = 0
-                           if (cat.limit > 0) percent = Math.min((cat.spent / cat.limit) * 100, 100)
-                           else percent = cat.spent > 0 ? 100 : 0
-                           
-                           let barColor = cat.color
-                           if (cat.limit > 0) {
-                              if (percent >= 90) barColor = '#FF7676'
-                              else if (percent >= 75) barColor = '#FFB84C'
-                           }
-                           
-                           return (
-                              <div key={cat.id}>
-                                 <div className="flex justify-between text-xs mb-1">
-                                    <span className="flex items-center gap-2"><span className="opacity-50">{cat.icon}</span> {cat.name}</span>
-                                    <span className="opacity-70">{currency}{cat.spent.toFixed(0)} / {cat.limit > 0 ? `${cat.limit}` : '∞'}</span>
-                                 </div>
-                                 <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                                    <div className="h-full transition-all duration-500" style={{ width: `${percent}%`, backgroundColor: barColor }} />
-                                 </div>
-                              </div>
-                           )
-                        })}
-                     </div>
-                  </div>
-               )}
-          </div>
+                {/* Legend */}
+                <div className="mt-6 space-y-2">
+                  {donutData.map((d, i) => (
+                    <div key={i} className="flex items-center gap-3 py-1">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                      <span className="text-sm text-txt-secondary flex-1">{d.name}</span>
+                      <span className="font-mono text-sm font-medium text-txt-primary">
+                        {currency}{d.amount.toLocaleString()}
+                      </span>
+                      <span className="font-mono text-2xs text-txt-muted w-10 text-right">
+                        {totalPeriodSpend > 0 ? Math.round((d.amount / totalPeriodSpend) * 100) : 0}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
 
-          <div className="flex flex-col">
-              {/* Line Chart Block */}
-              <div className="mb-8 flex-1 flex flex-col">
-                 <div className="flex justify-between items-end mb-4">
+                {/* Top Category Spotlight */}
+                {topCategory && (
+                  <div className="mt-4 bg-interactive/40 rounded-xl p-3 border-l-2 flex items-center justify-between"
+                       style={{ borderLeftColor: topCategory.color }}>
                     <div>
-                       <h2 className="text-sm font-semibold">6-Month Trend</h2>
-                       <p className="text-[10px] text-white/40 mt-1 flex gap-3">
-                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full border border-income"></span> Income</span>
-                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full border border-expense"></span> Expense</span>
-                       </p>
+                      <p className="overline mb-0.5">Top Spend</p>
+                      <p className="text-sm font-semibold text-txt-primary">{topCategory.name}</p>
                     </div>
-                 </div>
-                 <div className="bg-white/5 rounded-2xl p-4 h-64 lg:h-full min-h-[300px] border border-white/5 relative">
-                    {lineData.labels.length === 0 ? (
-                       <p className="text-center text-white/40 mt-10">No history available</p>
-                    ) : (
-                       <Line data={lineChartData} options={lineOptions} />
-                    )}
-                 </div>
-              </div>
-          </div>
+                    <p className="font-mono text-base font-bold text-expense">
+                      {currency}{topCategory.amount.toLocaleString()}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </Card>
 
+          {/* ═══ Line Chart + Budget Progress ═══ */}
+          <div className="flex flex-col gap-6">
+            {/* Line Chart */}
+            <Card>
+              <div className="flex justify-between items-center mb-4">
+                <p className="section-title">6-Month Trend</p>
+                <div className="flex gap-3">
+                  <span className="flex items-center gap-1.5 text-2xs text-txt-muted">
+                    <span className="w-4 border-t-2 border-dashed border-income" /> Income
+                  </span>
+                  <span className="flex items-center gap-1.5 text-2xs text-txt-muted">
+                    <span className="w-4 border-t-2 border-expense" /> Expense
+                  </span>
+                </div>
+              </div>
+              <div className="h-56 lg:h-64">
+                {lineData.labels.length === 0 ? (
+                  <p className="text-center text-txt-muted text-sm mt-16">No history available</p>
+                ) : (
+                  <Line data={lineChartData} options={lineOptions} />
+                )}
+              </div>
+            </Card>
+
+            {/* Budget Progress */}
+            {budgetProgress.length > 0 && (
+              <Card>
+                <p className="section-title mb-4">Budget Limits</p>
+                <div className="space-y-4">
+                  {budgetProgress.map((cat, i) => {
+                    const percent = cat.limit > 0 ? Math.min((cat.spent / cat.limit) * 100, 100) : 0
+
+                    return (
+                      <div key={cat.id} className={`${percent >= 80 ? 'p-2 -mx-2 rounded-xl bg-expense-tint/30' : ''}`}>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-sm text-txt-secondary">{cat.name}</span>
+                          <span className="font-mono text-2xs text-txt-muted">
+                            {currency}{cat.spent.toLocaleString()} / {cat.limit > 0 ? cat.limit.toLocaleString() : '∞'}
+                          </span>
+                        </div>
+                        <ProgressBar
+                          value={cat.spent}
+                          max={cat.limit}
+                          color="adaptive"
+                          height="sm"
+                          delay={i * 80}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </Card>
+            )}
+          </div>
         </div>
       )}
     </div>
