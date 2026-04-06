@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Mail, ArrowLeft, RefreshCw, CheckCircle2 } from 'lucide-react'
+import { Mail, ArrowLeft, RefreshCw, CheckCircle2, Globe, AlertTriangle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import toast from 'react-hot-toast'
+import CustomToast from '../components/ui/CustomToast'
 
 export default function VerifyEmail() {
   const navigate = useNavigate()
@@ -10,15 +10,44 @@ export default function VerifyEmail() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [cooldown, setCooldown] = useState(0)
+  const [isSupabaseOnline, setIsSupabaseOnline] = useState(true)
+  const [checkingStatus, setCheckingStatus] = useState(true)
 
-  // Extract email from location state if available (passed from Signup)
+  // 1. Handle email persistence (Location state -> LocalStorage fallback)
   useEffect(() => {
+    const savedEmail = localStorage.getItem('pending_verification_email')
     if (location.state?.email) {
       setEmail(location.state.email)
+      localStorage.setItem('pending_verification_email', location.state.email)
+    } else if (savedEmail) {
+      setEmail(savedEmail)
     }
   }, [location.state])
 
-  // Countdown for resend button cooldown
+  // 2. Supabase Health Check
+  useEffect(() => {
+    async function checkHealth() {
+      try {
+        setCheckingStatus(true)
+        // Ping settings or a simple public table to verify connectivity
+        const { error } = await supabase.from('profiles').select('id').limit(1)
+        
+        // If error is 'fetch' related, it's a connection issue
+        if (error && error.message?.includes('fetch')) {
+          setIsSupabaseOnline(false)
+        } else {
+          setIsSupabaseOnline(true)
+        }
+      } catch (err) {
+        setIsSupabaseOnline(false)
+      } finally {
+        setCheckingStatus(false)
+      }
+    }
+    checkHealth()
+  }, [])
+
+  // 3. Countdown for resend button cooldown
   useEffect(() => {
     if (cooldown > 0) {
       const timer = setTimeout(() => setCooldown(cooldown - 1), 1000)
@@ -28,7 +57,9 @@ export default function VerifyEmail() {
 
   const handleResend = async () => {
     if (cooldown > 0) return
-    if (!email) return toast.error('Email not found. Please try signing up again.')
+    if (!email) {
+      return CustomToast.error('Email not found', 'Please try signing up again.')
+    }
 
     setLoading(true)
     try {
@@ -36,12 +67,24 @@ export default function VerifyEmail() {
         type: 'signup',
         email: email,
       })
-      if (error) throw error
       
-      toast.success('Verification email resent!')
+      if (error) {
+        // Handle rate limits specifically
+        if (error.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a minute before trying again.')
+        }
+        throw error
+      }
+      
+      CustomToast.success('Email Resent!', `A new verification link has been sent to ${email}`)
       setCooldown(60) // 1 minute cooldown
     } catch (error) {
-      toast.error(error.message || 'Failed to resend email')
+      console.error('Resend error:', error)
+      const isFetchError = error.message?.includes('fetch')
+      CustomToast.error(
+        isFetchError ? 'Connection Error' : 'Resend Failed',
+        isFetchError ? 'Unable to reach the server. Please check your internet.' : error.message
+      )
     } finally {
       setLoading(false)
     }
@@ -51,6 +94,18 @@ export default function VerifyEmail() {
     <div className="min-h-screen bg-canvas flex flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm animate-fade-in text-center">
         
+        {/* Status Badge */}
+        {!checkingStatus && (
+          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-8 border ${
+            isSupabaseOnline 
+              ? 'bg-income/10 text-income border-income/20' 
+              : 'bg-expense/10 text-expense border-expense/20 animate-pulse'
+          }`}>
+            {isSupabaseOnline ? <Globe size={10} /> : <AlertTriangle size={10} />}
+            {isSupabaseOnline ? 'Server Online' : 'Server Unreachable'}
+          </div>
+        )}
+
         {/* Illustration */}
         <div className="relative w-24 h-24 mx-auto mb-8">
           <div className="absolute inset-0 bg-accent/20 rounded-3xl blur-2xl animate-pulse" />
@@ -89,7 +144,7 @@ export default function VerifyEmail() {
 
           <button
             onClick={handleResend}
-            disabled={loading || cooldown > 0}
+            disabled={loading || cooldown > 0 || !isSupabaseOnline}
             className="w-full h-11 flex items-center justify-center gap-2 rounded-xl border border-border-subtle bg-interactive
                        hover:bg-elevated hover:border-border transition-all duration-fast text-sm font-semibold
                        disabled:opacity-50 disabled:cursor-not-allowed group"
@@ -101,6 +156,12 @@ export default function VerifyEmail() {
             )}
             {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend Verification Email'}
           </button>
+          
+          {!isSupabaseOnline && !checkingStatus && (
+            <p className="text-[10px] text-expense font-medium animate-bounce">
+              Servers are currently unreachable. Please check your connection.
+            </p>
+          )}
         </div>
 
         {/* Back Link */}

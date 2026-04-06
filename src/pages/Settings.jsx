@@ -1,11 +1,10 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Upload, CheckCircle2, ChevronRight, Download, Trash2, LogOut, Grid3x3 } from 'lucide-react'
+import { ArrowLeft, Upload, CheckCircle2, ChevronRight, Download, Trash2, LogOut, Grid3x3, Smartphone, Eye, EyeOff, Plus } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import toast from 'react-hot-toast'
+import CustomToast from '../components/ui/CustomToast'
 import { usePWAInstall } from '../hooks/usePWAInstall'
-import { Smartphone } from 'lucide-react'
 
 import Card from '../components/ui/Card'
 import ConfirmModal from '../components/ui/ConfirmModal'
@@ -38,12 +37,15 @@ export default function Settings() {
   const [passLoading, setPassLoading] = useState(false)
   const [dbLoading, setDbLoading] = useState(false)
   const [showWipeConfirm, setShowWipeConfirm] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const { canInstall, installApp } = usePWAInstall()
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0]
     if (selectedFile) {
-      if (selectedFile.size > 2 * 1024 * 1024) return toast.error('File size must be less than 2MB')
+      if (selectedFile.size > 2 * 1024 * 1024) {
+        return CustomToast.error('File too large', 'Avatar must be less than 2MB.')
+      }
       setFile(selectedFile)
       setPreviewUrl(URL.createObjectURL(selectedFile))
     }
@@ -55,11 +57,13 @@ export default function Settings() {
     e.preventDefault(); setIsDragging(false)
     const selectedFile = e.dataTransfer.files[0]
     if (selectedFile?.type.startsWith('image/')) {
-      if (selectedFile.size > 2 * 1024 * 1024) return toast.error('File size must be less than 2MB')
+      if (selectedFile.size > 2 * 1024 * 1024) {
+        return CustomToast.error('File too large', 'Avatar must be less than 2MB.')
+      }
       setFile(selectedFile)
       setPreviewUrl(URL.createObjectURL(selectedFile))
     } else {
-      toast.error('Please drop an image file')
+      CustomToast.error('Invalid file', 'Please drop an image file (JPG, PNG, WebP).')
     }
   }
 
@@ -81,9 +85,9 @@ export default function Settings() {
       setProfile(prev => ({ ...prev, name, currency, avatar_url: finalAvatarUrl }))
       setAvatarUrl(finalAvatarUrl)
       setFile(null)
-      toast.success('Profile updated')
+      CustomToast.success('Profile updated', 'Your settings have been saved successfully.')
     } catch (err) {
-      toast.error('Failed to update profile')
+      CustomToast.error('Update Failed', 'Failed to update your profile. Please try again.')
       console.error(err)
     } finally {
       setProfileLoading(false)
@@ -92,15 +96,17 @@ export default function Settings() {
 
   const handleUpdatePassword = async (e) => {
     e.preventDefault()
-    if (password.length < 6) return toast.error('Password must be at least 6 characters')
+    if (password.length < 6) {
+      return CustomToast.error('Weak Password', 'Password must be at least 6 characters.')
+    }
     setPassLoading(true)
     try {
       const { error } = await supabase.auth.updateUser({ password })
       if (error) throw error
-      toast.success('Password updated')
+      CustomToast.success('Password updated', 'Your new password is now active.')
       setPassword('')
     } catch (err) {
-      toast.error(err.message || 'Failed to update password')
+      CustomToast.error('Update Failed', err.message || 'Failed to update password')
     } finally {
       setPassLoading(false)
     }
@@ -111,7 +117,9 @@ export default function Settings() {
     try {
       const { data, error } = await supabase.from('transactions').select('*').eq('user_id', user.id).order('date', { ascending: false })
       if (error) throw error
-      if (!data?.length) return toast('No transactions to export')
+      if (!data?.length) {
+        return CustomToast.info('No data', 'There are no transactions to export yet.')
+      }
       const headers = ['Date', 'Type', 'Amount', 'Category', 'Description', 'Note']
       const rows = data.map(tx => [tx.date, tx.type, tx.amount, `"${tx.category}"`, `"${tx.description}"`, `"${tx.note || ''}"`])
       const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
@@ -124,16 +132,51 @@ export default function Settings() {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-      toast.success('Export downloaded!')
+      CustomToast.success('Export started', 'Your transaction history is being downloaded.')
     } catch (err) {
-      toast.error('Failed to export data')
+      CustomToast.error('Export failed', 'An error occurred while generating your export.')
+    } finally {
+      setDbLoading(false)
+    }
+  }
+
+  const confirmReset = () => {
+    CustomToast.confirm(
+      'Reset everything?',
+      'This will permanently delete all your transactions, budgets, and saved data. This action cannot be undone.',
+      handleWipeData,
+      null,
+      'Wipe Everything',
+      'Cancel'
+    )
+  }
+
+  const confirmMonthlyReset = () => {
+    CustomToast.confirm(
+      'Start New Month?',
+      'This will clear your transactions and budgets for a fresh start, but KEEP your account and categories.',
+      handleMonthlyReset,
+      null,
+      'Reset Month',
+      'Cancel'
+    )
+  }
+
+  const handleMonthlyReset = async () => {
+    setDbLoading(true)
+    try {
+      await supabase.from('transactions').delete().eq('user_id', user.id)
+      await supabase.from('debts').delete().eq('user_id', user.id)
+      await supabase.from('budgets').delete().eq('user_id', user.id)
+      CustomToast.success('Month Reset', 'Transactions and budgets cleared. You are ready for a fresh start!')
+    } catch (err) {
+      CustomToast.error('Reset failed', 'An error occurred while resetting your data.')
     } finally {
       setDbLoading(false)
     }
   }
 
   const handleWipeData = async () => {
-    setShowWipeConfirm(false)
     setDbLoading(true)
     try {
       await supabase.from('transactions').delete().eq('user_id', user.id)
@@ -141,18 +184,24 @@ export default function Settings() {
       await supabase.from('budgets').delete().eq('user_id', user.id)
       await supabase.from('categories').delete().eq('user_id', user.id)
       await supabase.from('profiles').delete().eq('user_id', user.id)
-      toast.success('Data wiped.')
+      CustomToast.success('Data wiped', 'All your data has been permanently deleted.')
       await signOut()
       navigate('/login')
     } catch (err) {
-      toast.error('Failed during data wipe.')
+      CustomToast.error('Wipe failed', 'An error occurred while deleting your data.')
     } finally {
       setDbLoading(false)
     }
   }
 
   const handleLogout = async () => {
-    try { await signOut(); navigate('/login') } catch { toast.error('Error logging out') }
+    try { 
+      await signOut()
+      CustomToast.success('Logged out', 'You have been successfully signed out.')
+      navigate('/login')
+    } catch { 
+      CustomToast.error('Logout error', 'Something went wrong while signing out.')
+    }
   }
 
   return (
@@ -167,7 +216,7 @@ export default function Settings() {
         >
           <ArrowLeft size={16} />
         </button>
-        <h1 className="text-xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-xl font-bold tracking-tight text-txt-bright">Settings</h1>
       </div>
 
       <div className="space-y-4 stagger-children">
@@ -206,7 +255,7 @@ export default function Settings() {
                 required
               >
                 {CURRENCIES.map(curr => (
-                  <option key={curr.value} value={curr.value} className="bg-card">{curr.label}</option>
+                  <option key={curr.value} value={curr.value} className="bg-canvas">{curr.label}</option>
                 ))}
               </select>
             </div>
@@ -221,7 +270,7 @@ export default function Settings() {
                 {previewUrl ? (
                   <div className="flex flex-col items-center gap-3">
                     <img src={previewUrl} alt="Preview" className="file-dropzone-preview" />
-                    <p className="text-2xs text-txt-muted">Click or drag to change</p>
+                    <p className="text-2xs text-txt-muted text-center leading-relaxed">Click or drag to change</p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2 text-txt-muted">
@@ -238,9 +287,9 @@ export default function Settings() {
                   </div>
                 )}
               </div>
-              <p className="text-2xs text-txt-muted mt-2 text-center">Max 2MB · JPG, PNG, WebP</p>
+              <p className="text-2xs text-txt-muted mt-3 text-center leading-relaxed">Max 2MB · JPG, PNG, WebP</p>
             </div>
-            <button type="submit" className="btn-primary w-full h-11 flex items-center justify-center text-sm" disabled={profileLoading}>
+            <button type="submit" className="btn-primary w-full h-11 flex items-center justify-center text-sm shadow-lg shadow-accent/10" disabled={profileLoading}>
               {profileLoading
                 ? <div className="w-5 h-5 border-2 border-canvas/20 border-t-canvas rounded-full animate-spin" />
                 : 'Update Profile'}
@@ -254,12 +303,25 @@ export default function Settings() {
           <form onSubmit={handleUpdatePassword} className="space-y-4">
             <div>
               <label className="overline mb-1.5 block">New Password</label>
-              <input
-                type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                className="input-field" placeholder="Minimum 6 characters" required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="input-field pr-12"
+                  placeholder="Minimum 6 characters"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-txt-muted hover:text-txt-primary transition-colors duration-fast"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
-            <button type="submit" className="btn-primary w-full h-11 flex items-center justify-center text-sm" disabled={passLoading}>
+            <button type="submit" className="btn-primary w-full h-11 flex items-center justify-center text-sm shadow-lg shadow-accent/10" disabled={passLoading}>
               {passLoading
                 ? <div className="w-5 h-5 border-2 border-canvas/20 border-t-canvas rounded-full animate-spin" />
                 : 'Change Password'}
@@ -274,26 +336,41 @@ export default function Settings() {
             <button
               onClick={handleExportCSV} disabled={dbLoading}
               className="w-full flex items-center justify-between p-3 
-                         bg-accent-tint border border-accent/20 rounded-xl 
-                         hover:border-accent/40 active:scale-[0.98] transition-[border-color,transform] duration-fast"
+                         bg-accent/5 border border-accent/10 rounded-xl 
+                         hover:bg-accent/10 active:scale-[0.98] transition-all duration-fast"
             >
-              <div>
-                <h3 className="text-sm font-medium text-accent">Export as CSV</h3>
+              <div className="flex flex-col items-start">
+                <h3 className="text-sm font-semibold text-accent">Export as CSV</h3>
                 <p className="text-2xs text-txt-muted mt-0.5">Download full transaction history</p>
               </div>
               <Download size={18} className="text-accent" />
             </button>
 
             <button
-              onClick={() => setShowWipeConfirm(true)} disabled={dbLoading}
+              onClick={confirmMonthlyReset} disabled={dbLoading}
               className="w-full flex items-center justify-between p-3 
-                         bg-expense-tint border border-expense/20 rounded-xl 
-                         hover:border-expense/40 active:scale-[0.98] transition-[border-color,transform] duration-fast group"
+                         bg-income/5 border border-income/10 rounded-xl 
+                         hover:bg-income/10 active:scale-[0.98] transition-all duration-fast group text-left"
             >
-              <div>
-                <h3 className="text-sm font-medium text-expense">Wipe Data & Logout</h3>
+              <div className="flex flex-col items-start">
+                <h3 className="text-sm font-semibold text-income">Reset for New Month</h3>
+                <p className="text-2xs text-txt-muted group-hover:text-income/60 transition-colors mt-0.5">
+                  Clears transactions & budgets (Keeps account)
+                </p>
+              </div>
+              <Plus size={18} className="text-income" />
+            </button>
+
+            <button
+              onClick={confirmReset} disabled={dbLoading}
+              className="w-full flex items-center justify-between p-3 
+                         bg-expense/5 border border-expense/10 rounded-xl 
+                         hover:bg-expense/10 active:scale-[0.98] transition-all duration-fast group text-left"
+            >
+              <div className="flex flex-col items-start">
+                <h3 className="text-sm font-semibold text-expense">Reset Everything</h3>
                 <p className="text-2xs text-txt-muted group-hover:text-expense/60 transition-colors mt-0.5">
-                  Permanently deletes all data
+                  Permanently deletes all data and logs out
                 </p>
               </div>
               <Trash2 size={18} className="text-expense" />
@@ -308,15 +385,15 @@ export default function Settings() {
             <button
               onClick={installApp}
               className="w-full flex items-center justify-between p-3 
-                         bg-accent-tint border border-accent/20 rounded-xl 
-                         hover:border-accent/40 active:scale-[0.98] transition-[border-color,transform] duration-fast"
+                         bg-accent/5 border border-accent/10 rounded-xl 
+                         hover:bg-accent/10 active:scale-[0.98] transition-all duration-fast"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-canvas shrink-0">
                   <Smartphone size={18} />
                 </div>
                 <div className="text-left">
-                  <h3 className="text-sm font-medium text-accent">Install BudgetBuddy</h3>
+                  <h3 className="text-sm font-semibold text-accent">Install BudgetBuddy</h3>
                   <p className="text-2xs text-txt-muted mt-0.5">Add to home screen for quick access</p>
                 </div>
               </div>
@@ -328,30 +405,21 @@ export default function Settings() {
         {/* Sign Out */}
         <button
           onClick={handleLogout}
-          className="w-full btn-ghost flex items-center justify-center gap-2 h-11"
+          className="w-full btn-ghost flex items-center justify-center gap-2 h-11 text-txt-muted hover:text-expense hover:bg-expense/5 transition-all"
         >
           <LogOut size={16} />
           Sign Out
         </button>
 
         {/* Footer */}
-        <div className="text-center pt-6 pb-4 opacity-20 pointer-events-none">
-          <p className="text-2xs font-bold tracking-wide uppercase font-mono">BudgetBuddy</p>
-          <p className="text-2xs mt-0.5">v2.0.0</p>
+        <div className="text-center pt-8 pb-4 opacity-30 pointer-events-none">
+          <p className="text-2xs font-bold tracking-[0.2em] uppercase font-mono text-txt-primary">BudgetBuddy</p>
+          <p className="text-[10px] mt-1 font-medium italic">Empowering your financial freedom</p>
+          <p className="text-[10px] mt-2 opacity-50">v2.0.0</p>
         </div>
       </div>
 
       {/* Wipe Data Confirmation Modal */}
-      <ConfirmModal
-        open={showWipeConfirm}
-        variant="danger"
-        title="Delete all your data?"
-        message="This will permanently clear all transactions, categories, budgets, and IOUs. This action cannot be undone."
-        confirmText="Wipe Everything"
-        cancelText="Keep My Data"
-        onConfirm={handleWipeData}
-        onCancel={() => setShowWipeConfirm(false)}
-      />
     </div>
   )
 }

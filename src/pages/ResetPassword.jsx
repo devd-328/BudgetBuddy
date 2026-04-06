@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ShieldCheck, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import toast from 'react-hot-toast'
+import CustomToast from '../components/ui/CustomToast'
 
 export default function ResetPassword() {
   const navigate = useNavigate()
@@ -34,8 +34,12 @@ export default function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (password.length < 6) return toast.error('Password must be at least 6 characters')
-    if (password !== confirmPassword) return toast.error('Passwords do not match')
+    if (password.length < 6) {
+      return CustomToast.error('Weak Password', 'Password must be at least 6 characters.')
+    }
+    if (password !== confirmPassword) {
+      return CustomToast.error('Passwords mismatch', 'The passwords you entered do not match.')
+    }
 
     setLoading(true)
     try {
@@ -45,9 +49,9 @@ export default function ResetPassword() {
       // Sign out so user can log in fresh with new password
       await supabase.auth.signOut()
       setSuccess(true)
-      toast.success('Password updated successfully!')
+      CustomToast.success('Password updated!', 'Your password has been changed successfully.')
     } catch (error) {
-      toast.error(error.message || 'Failed to update password')
+      CustomToast.error('Update Failed', error.message || 'Failed to update password')
     } finally {
       setLoading(false)
     }
@@ -58,16 +62,16 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen bg-canvas flex flex-col items-center justify-center px-6">
         <div className="w-full max-w-sm animate-fade-in text-center">
-          <div className="w-16 h-16 rounded-2xl bg-income-tint border border-income/20 flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 rounded-2xl bg-income/10 border border-income/20 flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 size={28} className="text-income" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-txt-bright mb-2">Password Updated!</h1>
-          <p className="text-txt-secondary text-sm mb-8">
+          <p className="text-txt-secondary text-sm mb-8 leading-relaxed">
             Your password has been changed successfully. You can now sign in with your new password.
           </p>
           <Link
             to="/login"
-            className="btn-primary w-full h-12 flex items-center justify-center"
+            className="btn-primary w-full h-12 flex items-center justify-center shadow-lg shadow-accent/10"
           >
             Go to Login
           </Link>
@@ -85,15 +89,15 @@ export default function ResetPassword() {
             <ShieldCheck size={24} className="text-accent" />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-txt-bright mb-2">Verifying your link...</h1>
-          <p className="text-txt-muted text-sm mb-6">
+          <p className="text-txt-muted text-sm mb-6 leading-relaxed">
             Please wait while we verify your reset token.
           </p>
           <div className="flex justify-center">
             <div className="w-6 h-6 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
           </div>
-          <p className="text-txt-muted text-2xs mt-8">
+          <p className="text-txt-muted text-2xs mt-10 leading-relaxed">
             If this takes too long, your link may have expired.{' '}
-            <Link to="/forgot-password" className="text-accent hover:text-accent-hover transition-colors">
+            <Link to="/forgot-password" className="text-accent hover:text-accent-hover transition-colors font-medium">
               Request a new one
             </Link>
           </p>
@@ -163,7 +167,7 @@ export default function ResetPassword() {
 
           <button
             type="submit"
-            className="btn-primary w-full h-12 flex items-center justify-center"
+            className="btn-primary w-full h-12 flex items-center justify-center shadow-lg shadow-accent/10"
             disabled={loading || password.length < 6 || password !== confirmPassword}
           >
             {loading
@@ -172,7 +176,7 @@ export default function ResetPassword() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-txt-muted mt-6">
+        <p className="text-center text-sm text-txt-muted mt-8">
           Remember your password?{' '}
           <Link to="/login" className="text-accent font-medium hover:text-accent-hover transition-colors">
             Sign in
@@ -186,8 +190,8 @@ export default function ResetPassword() {
 function PasswordHint({ met, text }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${met ? 'bg-income' : 'bg-txt-muted/30'}`} />
-      <span className={`text-2xs transition-colors duration-300 ${met ? 'text-income' : 'text-txt-muted'}`}>
+      <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${met ? 'bg-income shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-txt-muted/30'}`} />
+      <span className={`text-2xs font-medium transition-colors duration-300 ${met ? 'text-txt-primary' : 'text-txt-muted'}`}>
         {text}
       </span>
     </div>

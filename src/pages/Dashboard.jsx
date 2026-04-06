@@ -169,6 +169,34 @@ export default function Dashboard() {
             currency={currency}
           />
 
+          {/* Ready to Assign Highlight */}
+          {data.readyToAssign > 0 && (
+            <div className="bg-gradient-to-br from-income/20 to-accent/5 border border-income/30 rounded-2xl p-5 
+                           flex items-center justify-between gap-4 animate-scale-in group hover:border-income/50 
+                           transition-all duration-medium">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-income flex items-center justify-center text-canvas shrink-0 shadow-lg shadow-income/20">
+                  <Plus size={24} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-txt-bright group-hover:text-income transition-colors underline-offset-4 decoration-income/30 group-hover:underline">Ready to Assign</h3>
+                  <p className="text-2xs text-txt-muted mt-0.5">You have unallocated income to plan for.</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-black text-income font-mono tracking-tighter">
+                  {currency}{data.readyToAssign.toLocaleString()}
+                </p>
+                <Link 
+                  to="/categories" 
+                  className="text-2xs font-bold text-accent hover:text-accent-hover transition-colors"
+                >
+                  Budget Now →
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* PWA Install Promo */}
           {canInstall && (
             <div className="bg-accent-tint border border-accent/20 rounded-2xl p-4 flex items-center justify-between gap-4 animate-scale-in">

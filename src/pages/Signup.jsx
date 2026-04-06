@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import toast from 'react-hot-toast'
+import CustomToast from '../components/ui/CustomToast'
 
 const GoogleIcon = () => (
+// ... (same as before)
   <svg className="w-5 h-5" viewBox="0 0 24 24">
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -42,17 +43,23 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-      return toast.error('Please fill in all fields')
+      return CustomToast.error('Missing fields', 'Please fill in all fields to create your account.')
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      return toast.error('Please enter a valid email address')
+      return CustomToast.error('Invalid email', 'Please enter a valid email address (e.g. name@gmail.com)')
     }
     if (/[^a-zA-Z\s]/.test(formData.name)) {
-      return toast.error('Only letters and spaces are allowed for your name')
+      return CustomToast.error('Invalid name', 'Only letters and spaces are allowed for your name.')
     }
-    if (formData.password !== formData.confirmPassword) return toast.error('Passwords do not match')
-    if (score < 4) return toast.error('Please create a stronger password (at least 4 requirements)')
-    if (!formData.termsAccepted) return toast.error('Please agree to the Terms & Privacy')
+    if (formData.password !== formData.confirmPassword) {
+      return CustomToast.error('Passwords mismatch', 'The passwords you entered do not match.')
+    }
+    if (score < 4) {
+      return CustomToast.error('Weak password', 'Please follow the strength requirements below.')
+    }
+    if (!formData.termsAccepted) {
+      return CustomToast.error('Agreement required', 'You must agree to the Terms & Privacy to continue.')
+    }
 
     setLoading(true)
     try {
@@ -65,16 +72,20 @@ export default function Signup() {
 
       if (data?.user) {
         const { error: profileError } = await supabase.from('profiles').insert([
-          { user_id: data.user.id, name: formData.name, currency: '$' },
+          { user_id: data.user.id, name: formData.name, currency: 'Rs' },
         ])
         if (profileError && profileError.code !== '23505') {
           console.warn('Profile creation log:', profileError)
         }
-        toast.success('Account created! Verification email sent.')
+        
+        // Persist email for VerifyEmail page
+        localStorage.setItem('pending_verification_email', formData.email)
+        
+        CustomToast.success('Account created!', 'Please check your email for the verification link.')
         navigate('/verify-email', { state: { email: formData.email } })
       }
     } catch (error) {
-      toast.error(error.message)
+      CustomToast.error('Signup failed', error.message)
     } finally {
       setLoading(false)
     }
@@ -85,10 +96,10 @@ export default function Signup() {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
       if (error) throw error
     } catch (error) {
-      toast.error(error.message)
+      CustomToast.error('Google Auth Failed', error.message)
     }
   }
-
+// ... (rest of the component remains largely the same, just keeping the return block)
   return (
     <div className="min-h-screen bg-canvas flex flex-col items-center justify-center px-6 py-8 md:py-12">
       <div className="w-full max-w-sm animate-fade-in">

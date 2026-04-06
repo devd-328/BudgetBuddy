@@ -31,8 +31,8 @@ export default function BalanceCard({
         />
       </div>
 
-      {/* Breakdown — horizontal bar style */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Breakdown — flexible grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-3">
         {/* Income */}
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5">
@@ -41,7 +41,7 @@ export default function BalanceCard({
             </div>
             <span className="text-2xs font-medium text-txt-muted">Income</span>
           </div>
-          <p className="font-mono text-sm font-bold text-txt-primary tracking-tight">
+          <p className="font-mono text-sm font-bold text-txt-primary tracking-tight truncate">
             {currency}{totalIncome.toLocaleString('en-US', { maximumFractionDigits: 0 })}
           </p>
         </div>
@@ -54,7 +54,7 @@ export default function BalanceCard({
             </div>
             <span className="text-2xs font-medium text-txt-muted">Expense</span>
           </div>
-          <p className="font-mono text-sm font-bold text-txt-primary tracking-tight">
+          <p className="font-mono text-sm font-bold text-txt-primary tracking-tight truncate">
             {currency}{totalExpense.toLocaleString('en-US', { maximumFractionDigits: 0 })}
           </p>
         </div>
@@ -67,7 +67,7 @@ export default function BalanceCard({
             </div>
             <span className="text-2xs font-medium text-txt-muted">Lent</span>
           </div>
-          <p className="font-mono text-sm font-bold text-txt-primary tracking-tight">
+          <p className="font-mono text-sm font-bold text-txt-primary tracking-tight truncate">
             {currency}{totalLentOut.toLocaleString('en-US', { maximumFractionDigits: 0 })}
           </p>
         </div>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, KeyRound } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import toast from 'react-hot-toast'
+import CustomToast from '../components/ui/CustomToast'
 
 export default function ForgotPassword() {
   const [loading, setLoading] = useState(false)
@@ -11,7 +11,9 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!email) return toast.error('Please enter your email')
+    if (!email) {
+      return CustomToast.error('Email required', 'Please enter your email to receive a recovery link.')
+    }
 
     setLoading(true)
     try {
@@ -19,10 +21,10 @@ export default function ForgotPassword() {
         redirectTo: `${window.location.origin}/reset-password`,
       })
       if (error) throw error
-      toast.success('Reset link sent!')
+      CustomToast.success('Recovery link sent!', `We've sent a password reset link to ${email}`)
       setIsSent(true)
     } catch (error) {
-      toast.error(error.message)
+      CustomToast.error('Reset Failed', error.message)
     } finally {
       setLoading(false)
     }
@@ -44,7 +46,7 @@ export default function ForgotPassword() {
         <div className="bg-card border border-border-subtle rounded-2xl p-5 space-y-4">
           {isSent ? (
             <div className="text-center space-y-4">
-              <p className="text-txt-secondary text-sm">
+              <p className="text-txt-secondary text-sm leading-relaxed">
                 Check your email (<strong className="text-txt-primary">{email}</strong>) for a link to reset your password.
               </p>
               <Link to="/login" className="btn-primary w-full text-center h-12 flex items-center justify-center">
@@ -53,12 +55,14 @@ export default function ForgotPassword() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                id="reset-email" type="email" placeholder="Email Address"
-                className="input-field" value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <button type="submit" className="btn-primary w-full h-12 flex items-center justify-center" disabled={loading}>
+              <div className="space-y-1">
+                <input
+                  id="reset-email" type="email" placeholder="Email Address"
+                  className="input-field" value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <button type="submit" className="btn-primary w-full h-12 flex items-center justify-center shadow-lg shadow-accent/10" disabled={loading}>
                 {loading
                   ? <div className="w-5 h-5 border-2 border-canvas/20 border-t-canvas rounded-full animate-spin" />
                   : 'Send Link'}
@@ -67,12 +71,19 @@ export default function ForgotPassword() {
           )}
         </div>
 
-        <p className="text-center text-sm text-txt-muted mt-6">
+        <p className="text-center text-sm text-txt-muted mt-8">
           Remembered your password?{' '}
           <Link to="/login" className="text-accent font-medium hover:text-accent-hover transition-colors">
             Sign in
           </Link>
         </p>
+
+        {/* Back Link */}
+        <div className="mt-8 text-center animate-fade-in delay-300">
+           <Link to="/login" className="inline-flex items-center gap-2 text-txt-muted hover:text-txt-primary text-sm transition-colors">
+            <ArrowLeft size={14} /> Back to Login
+          </Link>
+        </div>
       </div>
     </div>
   )

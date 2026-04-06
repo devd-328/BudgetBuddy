@@ -4,7 +4,7 @@ import { ArrowLeft, Plus, Pencil, Target, Utensils, Bus, BookOpen, Heart, Shoppi
 import { useAuth } from '../context/AuthContext'
 import { useCategoriesAndBudgets } from '../hooks/useCategoriesAndBudgets'
 import { supabase } from '../lib/supabase'
-import toast from 'react-hot-toast'
+import CustomToast from '../components/ui/CustomToast'
 
 import Card from '../components/ui/Card'
 import ProgressBar from '../components/ui/ProgressBar'
@@ -77,7 +77,7 @@ export default function Categories() {
 
   const handleSaveCategory = async (e) => {
     e.preventDefault()
-    if (!catName) return toast.error('Category name needed.')
+    if (!catName) return CustomToast.error('Category name needed', 'Please provide a name for your category.')
 
     setCatFormLoading(true)
     try {
@@ -87,19 +87,19 @@ export default function Categories() {
           .update({ name: catName, icon: catIcon, color: catColor })
           .eq('id', selectedCat.id)
         if (error) throw error
-        toast.success('Category updated!')
+        CustomToast.success('Category updated', `Successfully saved changes to "${catName}".`)
       } else {
         const { error } = await supabase
           .from('categories')
           .insert([{ user_id: user.id, name: catName, icon: catIcon, color: catColor, budget_limit: 0 }])
         if (error) throw error
-        toast.success('Category created!')
+        CustomToast.success('Category created', `New category "${catName}" is ready for use.`)
       }
       setActiveView('list')
       refetch()
     } catch (err) {
       console.error(err)
-      toast.error('Failed to save category.')
+      CustomToast.error('Save Failed', 'An error occurred while saving the category.')
     } finally {
       setCatFormLoading(false)
     }
@@ -126,12 +126,12 @@ export default function Categories() {
           .insert([{ user_id: user.id, category_id: catId, limit_amount: numLimit, month: currentMonth, year: currentYear }])
         if (error) throw error
       }
-      toast.success('Budget goal updated!')
+      CustomToast.success('Budget goal updated', 'Your spending limit has been saved.')
       setExpandedBudget(null)
       refetch()
     } catch (err) {
       console.error(err)
-      toast.error('Failed to save budget.')
+      CustomToast.error('Budget failed', 'An error occurred while updating the budget goal.')
     } finally {
       setBudgetFormLoading(false)
     }
@@ -184,8 +184,8 @@ export default function Categories() {
                   className={`w-10 h-10 rounded-xl flex items-center justify-center border 
                     transition-[background,border-color,transform] duration-fast ease-out-expo
                     ${catIcon === name
-                      ? 'border-accent bg-accent-tint scale-110'
-                      : 'border-border-subtle bg-interactive hover:bg-elevated'
+                      ? 'border-accent bg-accent/10 scale-110 shadow-glow-accent'
+                      : 'border-border-subtle bg-card/40 hover:bg-interactive'
                     }`}
                 >
                   <Icon size={18} strokeWidth={1.5} className={catIcon === name ? 'text-accent' : 'text-txt-muted'} />
@@ -203,18 +203,18 @@ export default function Categories() {
                   key={color}
                   type="button"
                   onClick={() => setCatColor(color)}
-                  className="w-8 h-8 rounded-full transition-[transform,box-shadow] duration-fast ease-out-expo"
+                  className="w-8 h-8 rounded-full transition-all duration-fast ease-out-expo hover:scale-110"
                   style={{
                     backgroundColor: color,
-                    boxShadow: catColor === color ? `0 0 0 2px var(--tw-shadow-color, #0A0A0F), 0 0 0 4px ${color}` : 'none',
-                    transform: catColor === color ? 'scale(1.15)' : 'scale(1)',
+                    boxShadow: catColor === color ? `0 0 0 2px var(--canvas, #0A0A0F), 0 0 12px ${color}60` : 'none',
+                    transform: catColor === color ? 'scale(1.2)' : 'scale(1)',
                   }}
                 />
               ))}
             </div>
           </div>
 
-          <button type="submit" className="btn-primary w-full h-12 flex items-center justify-center" disabled={catFormLoading}>
+          <button type="submit" className="btn-primary w-full h-12 flex items-center justify-center shadow-lg shadow-accent/10" disabled={catFormLoading}>
             {catFormLoading
               ? <div className="w-5 h-5 border-2 border-canvas/20 border-t-canvas rounded-full animate-spin" />
               : 'Save Category'}
@@ -226,7 +226,7 @@ export default function Categories() {
 
   // ─── List View ───
   return (
-    <div className="page-enter pb-24">
+    <div className="page-enter pb-24 text-txt-bright">
       <div className="flex items-center justify-between mb-8">
         <div>
           <button
@@ -239,11 +239,10 @@ export default function Categories() {
         </div>
         <button
           onClick={() => handleOpenEditCategory()}
-          className="w-9 h-9 rounded-xl bg-interactive border border-border-subtle flex items-center justify-center 
-                     text-txt-muted hover:text-accent hover:border-accent/30 
-                     transition-[color,border-color] duration-fast active:scale-95"
+          className="w-10 h-10 rounded-xl bg-accent text-canvas shadow-lg shadow-accent/20 flex items-center justify-center 
+                     hover:bg-accent-hover transition-all duration-fast active:scale-95"
         >
-          <Plus size={18} />
+          <Plus size={20} strokeWidth={3} />
         </button>
       </div>
 
@@ -264,21 +263,21 @@ export default function Categories() {
             const isExpanded = expandedBudget === cat.id
 
             return (
-              <Card key={cat.id} variant="interactive" padding="compact" className="!cursor-default">
-                <div className="flex items-center gap-3 mb-3">
+              <Card key={cat.id} variant="interactive" padding="compact" className="!cursor-default shadow-xl shadow-canvas/50">
+                <div className="flex items-center gap-3 mb-4">
                   {/* Icon */}
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${cat.color}15` }}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                    style={{ backgroundColor: `${cat.color}15`, boxShadow: `0 0 15px ${cat.color}15` }}
                   >
-                    <Icon size={18} style={{ color: cat.color }} strokeWidth={1.75} />
+                    <Icon size={18} style={{ color: cat.color }} strokeWidth={2} />
                   </div>
 
                   {/* Name + Budget */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-txt-primary truncate">{cat.name}</h3>
-                    <p className="text-2xs text-txt-muted">
-                      {limit > 0 ? `Limit: ${currency}${limit.toLocaleString()}` : 'No limit set'}
+                    <h3 className="text-sm font-bold text-txt-primary truncate">{cat.name}</h3>
+                    <p className="text-2xs text-txt-muted font-medium">
+                      {limit > 0 ? `Goal: ${currency}${limit.toLocaleString()}` : 'No limit set'}
                     </p>
                   </div>
 
@@ -293,14 +292,14 @@ export default function Categories() {
                           setExpandedBudget(cat.id)
                         }
                       }}
-                      className="p-1.5 rounded-lg hover:bg-interactive text-txt-muted hover:text-accent transition-colors duration-fast"
+                      className="p-2 rounded-lg bg-card border border-border-subtle text-txt-muted hover:text-accent hover:border-accent/30 transition-all duration-300"
                       title="Edit budget"
                     >
                       <Target size={14} />
                     </button>
                     <button
                       onClick={() => handleOpenEditCategory(cat)}
-                      className="p-1.5 rounded-lg hover:bg-interactive text-txt-muted hover:text-txt-primary transition-colors duration-fast"
+                      className="p-2 rounded-lg bg-card border border-border-subtle text-txt-muted hover:text-txt-primary transition-colors duration-fast"
                       title="Edit category"
                     >
                       <Pencil size={14} />
@@ -309,13 +308,13 @@ export default function Categories() {
                 </div>
 
                 {/* Spent + Progress */}
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono text-xs font-medium text-txt-primary">
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <span className="font-mono text-xs font-bold text-txt-primary">
                     {currency}{spent.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                    <span className="text-txt-muted font-normal"> spent</span>
+                    <span className="text-txt-muted font-medium lowercase"> spent</span>
                   </span>
                   {limit > 0 && (
-                    <span className="font-mono text-2xs text-txt-muted">
+                    <span className={`font-mono text-xs font-black ${spent > limit ? 'text-expense' : 'text-income'}`}>
                       {Math.round((spent / limit) * 100)}%
                     </span>
                   )}
@@ -327,36 +326,37 @@ export default function Categories() {
                     max={limit}
                     color="adaptive"
                     height="sm"
+                    className="shadow-inner"
                   />
                 )}
 
                 {/* Inline Budget Editor */}
                 {isExpanded && (
-                  <div className="mt-3 pt-3 border-t border-border-subtle animate-fade-in">
+                  <div className="mt-4 pt-4 border-t border-border-subtle animate-scale-in origin-top">
                     <div className="flex gap-2">
                       <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-muted text-sm font-mono">{currency}</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-muted text-sm font-bold font-mono">{currency}</span>
                         <input
                           type="number"
                           step="1"
-                          placeholder="Monthly limit"
+                          placeholder="Monthly goal"
                           value={budgetLimit}
                           onChange={(e) => setBudgetLimit(e.target.value)}
-                          className="input-field pl-8 text-sm font-mono"
+                          className="input-field pl-8 text-sm font-bold font-mono h-11"
                         />
                       </div>
                       <button
                         onClick={() => handleSaveBudget(cat.id)}
                         disabled={budgetFormLoading}
-                        className="p-2.5 rounded-xl bg-accent text-txt-inverted hover:bg-accent-hover transition-colors duration-fast"
+                        className="w-11 h-11 rounded-xl bg-income text-canvas shadow-lg shadow-income/20 flex items-center justify-center hover:bg-income/90 transition-all active:scale-95"
                       >
-                        <Check size={16} />
+                        <Check size={18} strokeWidth={3} />
                       </button>
                       <button
                         onClick={() => setExpandedBudget(null)}
-                        className="p-2.5 rounded-xl bg-interactive text-txt-muted hover:text-txt-primary transition-colors duration-fast"
+                        className="w-11 h-11 rounded-xl bg-interactive text-txt-muted hover:text-txt-primary transition-all active:scale-95"
                       >
-                        <X size={16} />
+                        <X size={18} />
                       </button>
                     </div>
                   </div>

@@ -58,7 +58,7 @@ export default function SegmentedControl({
           data-segment-btn
           type="button"
           onClick={() => onChange(option.value)}
-          className={`relative z-10 flex-1 ${sizeClasses} font-semibold rounded-lg transition-colors duration-fast ${
+          className={`relative z-10 flex-1 ${sizeClasses} font-semibold rounded-lg transition-colors duration-fast truncate px-1 ${
             value === option.value
               ? 'text-txt-primary'
               : 'text-txt-muted hover:text-txt-secondary'

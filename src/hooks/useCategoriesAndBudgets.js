@@ -3,14 +3,22 @@ import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 
 const DEFAULT_CATEGORIES = [
-  { name: 'Food', icon: '🍔', color: '#5DCAA5' },
-  { name: 'Transport', icon: '🚌', color: '#378ADD' },
-  { name: 'Education', icon: '📚', color: '#F0997B' },
-  { name: 'Health', icon: '💊', color: '#FF7676' },
-  { name: 'Shopping', icon: '🛍', color: '#FFB84C' },
-  { name: 'Entertainment', icon: '🎮', color: '#9B5DE5' },
-  { name: 'Bills', icon: '💡', color: '#00F5D4' },
-  { name: 'Custom', icon: '➕', color: '#9E9E9E' },
+  // Expenses
+  { name: 'Food', icon: '🍔', color: '#5DCAA5', type: 'expense' },
+  { name: 'Transport', icon: '🚌', color: '#378ADD', type: 'expense' },
+  { name: 'Education', icon: '📚', color: '#F0997B', type: 'expense' },
+  { name: 'Health', icon: '💊', color: '#FF7676', type: 'expense' },
+  { name: 'Shopping', icon: '🛍', color: '#FFB84C', type: 'expense' },
+  { name: 'Entertainment', icon: '🎮', color: '#9B5DE5', type: 'expense' },
+  { name: 'Bills', icon: '💡', color: '#00F5D4', type: 'expense' },
+  { name: 'Custom', icon: '➕', color: '#9E9E9E', type: 'expense' },
+  
+  // Income
+  { name: 'Salary', icon: '💼', color: '#34D399', type: 'income' },
+  { name: 'Freelance', icon: '💻', color: '#60A5FA', type: 'income' },
+  { name: 'Gift', icon: '🎁', color: '#FBBF24', type: 'income' },
+  { name: 'Business', icon: '📈', color: '#818CF8', type: 'income' },
+  { name: 'Other Income', icon: '💰', color: '#A78BFA', type: 'income' },
 ]
 
 export function useCategoriesAndBudgets(userId) {
@@ -40,6 +48,7 @@ export function useCategoriesAndBudgets(userId) {
           name: c.name,
           icon: c.icon,
           color: c.color,
+          type: c.type || 'expense', // Fallback
           budget_limit: 0
         }))
         
@@ -73,18 +82,23 @@ export function useCategoriesAndBudgets(userId) {
       const startOfMonth = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0]
       const { data: txs, error: txsErr } = await supabase
         .from('transactions')
-        .select('category, amount')
+        .select('category, amount, type')
         .eq('user_id', userId)
-        .eq('type', 'expense')
         .gte('date', startOfMonth)
 
       if (txsErr) throw txsErr
 
       const mappedSpends = {}
+      let totalIncomeVal = 0
+      
       txs?.forEach(tx => {
-         const matchingCat = cats.find(c => c.name === tx.category)
-         if (matchingCat) {
-            mappedSpends[matchingCat.id] = (mappedSpends[matchingCat.id] || 0) + Number(tx.amount)
+         if (tx.type === 'income') {
+            totalIncomeVal += Number(tx.amount)
+         } else if (tx.type === 'expense') {
+            const matchingCat = cats.find(c => c.name === tx.category && c.type !== 'income')
+            if (matchingCat) {
+               mappedSpends[matchingCat.id] = (mappedSpends[matchingCat.id] || 0) + Number(tx.amount)
+            }
          }
       })
       

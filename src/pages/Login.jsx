@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import toast from 'react-hot-toast'
+import CustomToast from '../components/ui/CustomToast'
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -17,10 +17,13 @@ export default function Login() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({ email: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.email || !formData.password) return toast.error('Please fill in all fields')
+    if (!formData.email || !formData.password) {
+      return CustomToast.error('Missing credentials', 'Please enter your email and password.')
+    }
 
     setLoading(true)
     try {
@@ -28,10 +31,16 @@ export default function Login() {
         email: formData.email, password: formData.password,
       })
       if (error) throw error
-      toast.success('Welcome back!')
+      CustomToast.success('Welcome Back!', 'Redirecting you to your dashboard...')
       navigate('/')
     } catch (error) {
-      toast.error(error.message)
+      if (error.message.includes('Email not confirmed')) {
+        CustomToast.warning('Email not verified', 'Please check your inbox to verify your account.')
+        localStorage.setItem('pending_verification_email', formData.email)
+        navigate('/verify-email', { state: { email: formData.email } })
+      } else {
+        CustomToast.error('Login Failed', error.message)
+      }
     } finally {
       setLoading(false)
     }
@@ -42,7 +51,7 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
       if (error) throw error
     } catch (error) {
-      toast.error(error.message)
+      CustomToast.error('Google Auth Failed', error.message)
     }
   }
 
@@ -90,11 +99,23 @@ export default function Login() {
               className="input-field" value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
-            <input
-              id="login-password" type="password" placeholder="Password"
-              className="input-field" value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            />
+            <div className="relative">
+              <input
+                id="login-password" 
+                type={showPassword ? 'text' : 'password'} 
+                placeholder="Password"
+                className="input-field pr-12" 
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-txt-muted hover:text-txt-primary transition-colors duration-fast"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
 
             <div className="flex justify-end">
               <Link to="/forgot-password" className="text-sm text-accent hover:text-accent-hover transition-colors duration-fast">
