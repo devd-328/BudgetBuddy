@@ -38,7 +38,10 @@ export default function Settings() {
   const [dbLoading, setDbLoading] = useState(false)
   const [showWipeConfirm, setShowWipeConfirm] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const { canInstall, installApp } = usePWAInstall()
+  const { canInstall, installApp, isInstalled } = usePWAInstall()
+  
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0]
@@ -123,17 +126,43 @@ export default function Settings() {
       const headers = ['Date', 'Type', 'Amount', 'Category', 'Description', 'Note']
       const rows = data.map(tx => [tx.date, tx.type, tx.amount, `"${tx.category}"`, `"${tx.description}"`, `"${tx.note || ''}"`])
       const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+      
+      const fileName = `BudgetBuddy_Export_${new Date().toISOString().split('T')[0]}.csv`
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      
+      // Mobile Share API (Premium experience)
+      if (navigator.canShare && navigator.share) {
+        try {
+          const file = new File([blob], fileName, { type: 'text/csv' })
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'BudgetBuddy Export',
+              text: 'Your transaction history from BudgetBuddy'
+            })
+            CustomToast.success('Export shared')
+            return
+          }
+        } catch (shareErr) {
+          console.error('Share failed', shareErr)
+          // Fallback to traditional download on error
+        }
+      }
+
+      // Traditional Download Fallback
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.setAttribute('href', url)
-      link.setAttribute('download', `BudgetBuddy_Export_${new Date().toISOString().split('T')[0]}.csv`)
-      link.style.visibility = 'hidden'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      link.setAttribute('download', fileName)
+      
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        window.location.href = url
+      } else {
+        link.click()
+      }
       CustomToast.success('Export started', 'Your transaction history is being downloaded.')
     } catch (err) {
+      console.error(err)
       CustomToast.error('Export failed', 'An error occurred while generating your export.')
     } finally {
       setDbLoading(false)
@@ -379,26 +408,39 @@ export default function Settings() {
         </Card>
 
         {/* PWA Settings */}
-        {canInstall && (
+        {(canInstall || (isIOS && !isInstalled)) && (
           <Card>
             <p className="section-title mb-4">Application</p>
-            <button
-              onClick={installApp}
-              className="w-full flex items-center justify-between p-3 
-                         bg-accent/5 border border-accent/10 rounded-xl 
-                         hover:bg-accent/10 active:scale-[0.98] transition-all duration-fast"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-canvas shrink-0">
+            {canInstall ? (
+              <button
+                onClick={installApp}
+                className="w-full flex items-center justify-between p-3 
+                           bg-accent/5 border border-accent/10 rounded-xl 
+                           hover:bg-accent/10 active:scale-[0.98] transition-all duration-fast"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-canvas shrink-0">
+                    <Smartphone size={18} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-semibold text-accent">Install BudgetBuddy</h3>
+                    <p className="text-2xs text-txt-muted mt-0.5">Add to home screen for quick access</p>
+                  </div>
+                </div>
+                <ChevronRight size={18} className="text-accent" />
+              </button>
+            ) : (
+              <div className="p-3 bg-interactive/30 rounded-xl border border-border-subtle/50 text-center">
+                <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-accent mx-auto mb-3">
                   <Smartphone size={18} />
                 </div>
-                <div className="text-left">
-                  <h3 className="text-sm font-semibold text-accent">Install BudgetBuddy</h3>
-                  <p className="text-2xs text-txt-muted mt-0.5">Add to home screen for quick access</p>
-                </div>
+                <h3 className="text-sm font-semibold text-txt-primary">Install on iOS</h3>
+                <p className="text-2xs text-txt-muted mt-2 leading-relaxed px-2">
+                  Tap the <span className="inline-block px-1.5 py-0.5 bg-accent/10 text-accent rounded font-bold italic">Share</span> button 
+                  in Safari and select <span className="font-bold text-txt-primary">"Add to Home Screen"</span>
+                </p>
               </div>
-              <ChevronRight size={18} className="text-accent" />
-            </button>
+            )}
           </Card>
         )}
 

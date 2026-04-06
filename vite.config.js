@@ -16,6 +16,7 @@ export default defineConfig({
         theme_color: '#1a1a2e',
         background_color: '#1a1a2e',
         display: 'standalone',
+        id: '/?source=pwa',
         scope: '/',
         start_url: '/',
         orientation: 'portrait',
@@ -38,26 +39,23 @@ export default defineConfig({
         ],
         icons: [
           {
-            src: 'google_consent_logo.png',
+            src: 'icons/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
+            purpose: 'any'
           },
           {
-            src: 'google_consent_logo.png',
+            src: 'icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
+            purpose: 'any'
           },
           {
-            src: 'google_consent_logo.png',
-            sizes: '1024x1024',
+            src: 'icons/icon-512.png',
+            sizes: '512x512',
             type: 'image/png',
-          },
-          {
-            src: 'google_consent_logo.png',
-            sizes: '1024x1024',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
+            purpose: 'maskable'
+          }
         ],
         screenshots: [
           {
