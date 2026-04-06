@@ -22,13 +22,33 @@ export default function Signup() {
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', confirmPassword: '', termsAccepted: false,
   })
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false)
+
+  // Password strength calculation
+  const getStrength = (pw) => {
+    const requirements = [
+      { id: 'length', label: 'Min 8 characters', met: pw.length >= 8 },
+      { id: 'upper',  label: 'Uppercase (ABC)',  met: /[A-Z]/.test(pw) },
+      { id: 'lower',  label: 'Lowercase (abc)',  met: /[a-z]/.test(pw) },
+      { id: 'number', label: 'Number (123)',     met: /[0-9]/.test(pw) },
+      { id: 'symbol', label: 'Symbol (!@#)',     met: /[^A-Za-z0-9]/.test(pw) },
+    ]
+    const score = requirements.filter(r => r.met).length
+    return { score, requirements }
+  }
+
+  const { score, requirements } = getStrength(formData.password)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       return toast.error('Please fill in all fields')
     }
+    if (/[^a-zA-Z\s]/.test(formData.name)) {
+      return toast.error('Only letters and spaces are allowed for your name')
+    }
     if (formData.password !== formData.confirmPassword) return toast.error('Passwords do not match')
+    if (score < 4) return toast.error('Please create a stronger password (at least 4 requirements)')
     if (!formData.termsAccepted) return toast.error('Please agree to the Terms & Privacy')
 
     setLoading(true)
@@ -47,8 +67,8 @@ export default function Signup() {
         if (profileError && profileError.code !== '23505') {
           console.warn('Profile creation log:', profileError)
         }
-        toast.success('Account created! Welcome to BudgetBuddy.')
-        navigate('/')
+        toast.success('Account created! Verification email sent.')
+        navigate('/verify-email', { state: { email: formData.email } })
       }
     } catch (error) {
       toast.error(error.message)
@@ -104,27 +124,71 @@ export default function Signup() {
 
           {/* Email/Password form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              id="signup-name" type="text" placeholder="Full Name"
-              className="input-field" value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
+            <div className="space-y-1">
+              <input
+                id="signup-name" type="text" placeholder="Full Name"
+                className={`input-field ${formData.name && /[^a-zA-Z\s]/.test(formData.name) ? 'border-expense ring-1 ring-expense/20' : ''}`}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+              {formData.name && /[^a-zA-Z\s]/.test(formData.name) && (
+                <p className="text-[10px] text-expense font-medium pl-1 animate-fade-in">
+                  Only letters and spaces are allowed for your name
+                </p>
+              )}
+            </div>
             <input
               id="signup-email" type="email" placeholder="Email Address"
               className="input-field" value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
 
-            <div className="relative">
-              <input
-                id="signup-password" type={showPassword ? "text" : "password"}
-                placeholder="Password" className="input-field pr-10" value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
-              <button type="button" onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-txt-muted hover:text-txt-primary transition-colors p-1">
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+            <div className="space-y-3">
+              <div className="relative">
+                <input
+                  id="signup-password" type={showPassword ? "text" : "password"}
+                  placeholder="Password" className="input-field pr-10" value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onFocus={() => setIsPasswordFocused(true)}
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-txt-muted hover:text-txt-primary transition-colors p-1">
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+
+              {/* Password Strength Analyzer */}
+              {isPasswordFocused && (
+                <div className="space-y-3 pt-1 animate-fade-in">
+                  <div className="flex gap-1.5 h-1">
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <div
+                        key={level}
+                        className={`flex-1 rounded-full transition-all duration-500 ${
+                          score >= level
+                            ? score <= 2 
+                              ? 'bg-expense' 
+                              : score <= 4 
+                                ? 'bg-warning' 
+                                : 'bg-income'
+                            : 'bg-interactive'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    {requirements.map((req) => (
+                      <div key={req.id} className="flex items-center gap-2">
+                        <div className={`w-1 h-1 rounded-full ${req.met ? 'bg-income shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-txt-muted/30'}`} />
+                        <span className={`text-[10px] font-medium transition-colors duration-300 ${req.met ? 'text-txt-primary' : 'text-txt-muted'}`}>
+                          {req.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="relative">
