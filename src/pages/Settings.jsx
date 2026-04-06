@@ -4,6 +4,8 @@ import { ArrowLeft, Upload, CheckCircle2, ChevronRight, Download, Trash2, LogOut
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
+import { usePWAInstall } from '../hooks/usePWAInstall'
+import { Smartphone } from 'lucide-react'
 
 import Card from '../components/ui/Card'
 import ConfirmModal from '../components/ui/ConfirmModal'
@@ -36,6 +38,7 @@ export default function Settings() {
   const [passLoading, setPassLoading] = useState(false)
   const [dbLoading, setDbLoading] = useState(false)
   const [showWipeConfirm, setShowWipeConfirm] = useState(false)
+  const { canInstall, installApp } = usePWAInstall()
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0]
@@ -297,6 +300,30 @@ export default function Settings() {
             </button>
           </div>
         </Card>
+
+        {/* PWA Settings */}
+        {canInstall && (
+          <Card>
+            <p className="section-title mb-4">Application</p>
+            <button
+              onClick={installApp}
+              className="w-full flex items-center justify-between p-3 
+                         bg-accent-tint border border-accent/20 rounded-xl 
+                         hover:border-accent/40 active:scale-[0.98] transition-[border-color,transform] duration-fast"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-canvas shrink-0">
+                  <Smartphone size={18} />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-sm font-medium text-accent">Install BudgetBuddy</h3>
+                  <p className="text-2xs text-txt-muted mt-0.5">Add to home screen for quick access</p>
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-accent" />
+            </button>
+          </Card>
+        )}
 
         {/* Sign Out */}
         <button

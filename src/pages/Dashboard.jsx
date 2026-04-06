@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Settings, LogOut, Utensils, Bus, BookOpen, Heart, ShoppingBag, Gamepad2, Zap, HelpCircle, Plus } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useDashboardData } from '../hooks/useDashboardData'
+import { usePWAInstall } from '../hooks/usePWAInstall'
+import { Download, Laptop, Smartphone } from 'lucide-react'
 
 import BalanceCard from '../components/dashboard/BalanceCard'
 import WeeklyBars from '../components/dashboard/WeeklyBars'
@@ -24,6 +26,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuRef = useRef(null)
+  const { canInstall, installApp } = usePWAInstall()
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -165,6 +168,28 @@ export default function Dashboard() {
             totalLentOut={totalLentOut}
             currency={currency}
           />
+
+          {/* PWA Install Promo */}
+          {canInstall && (
+            <div className="bg-accent-tint border border-accent/20 rounded-2xl p-4 flex items-center justify-between gap-4 animate-scale-in">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center text-canvas shrink-0 shadow-lg shadow-accent/20">
+                  <Smartphone size={24} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-txt-bright">BudgetBuddy is now an App!</h3>
+                  <p className="text-2xs text-txt-muted mt-0.5">Install for lightning-fast access and offline use.</p>
+                </div>
+              </div>
+              <button 
+                onClick={installApp}
+                className="bg-accent text-canvas px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap
+                           hover:bg-accent-hover transition-all active:scale-95 shadow-md shadow-accent/10"
+              >
+                Install Now
+              </button>
+            </div>
+          )}
 
           {/* Top Categories */}
           {categoriesSpends.length > 0 && (
