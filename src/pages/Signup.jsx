@@ -44,6 +44,9 @@ export default function Signup() {
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       return toast.error('Please fill in all fields')
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      return toast.error('Please enter a valid email address')
+    }
     if (/[^a-zA-Z\s]/.test(formData.name)) {
       return toast.error('Only letters and spaces are allowed for your name')
     }
@@ -87,7 +90,7 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-canvas flex flex-col items-center justify-center px-6 py-8 md:py-12">
       <div className="w-full max-w-sm animate-fade-in">
         {/* Back */}
         <Link to="/" className="inline-flex items-center gap-2 text-txt-muted hover:text-txt-primary mb-6 text-sm transition-colors duration-fast">
@@ -95,12 +98,12 @@ export default function Signup() {
         </Link>
 
         {/* Brand */}
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4">
+        <div className="text-center mb-6 md:mb-8">
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-3 md:mb-4">
             <span className="text-accent font-black text-xl font-mono">B</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-txt-bright">BudgetBuddy</h1>
-          <p className="text-txt-muted text-sm mt-1">Take control of your finances</p>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-txt-bright">BudgetBuddy</h1>
+          <p className="text-txt-muted text-xs md:text-sm mt-1">Take control of your finances</p>
         </div>
 
         {/* Form */}
@@ -137,11 +140,19 @@ export default function Signup() {
                 </p>
               )}
             </div>
-            <input
-              id="signup-email" type="email" placeholder="Email Address"
-              className="input-field" value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            />
+            <div className="space-y-1">
+              <input
+                id="signup-email" type="email" placeholder="Email Address"
+                className={`input-field ${formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) ? 'border-expense ring-1 ring-expense/20' : ''}`}
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+              {formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && (
+                <p className="text-[10px] text-expense font-medium pl-1 animate-fade-in">
+                  Please enter a valid email address (e.g. name@gmail.com)
+                </p>
+              )}
+            </div>
 
             <div className="space-y-3">
               <div className="relative">
@@ -158,7 +169,7 @@ export default function Signup() {
               </div>
 
               {/* Password Strength Analyzer */}
-              {isPasswordFocused && (
+              {(isPasswordFocused || formData.password.length > 0) && (
                 <div className="space-y-3 pt-1 animate-fade-in">
                   <div className="flex gap-1.5 h-1">
                     {[1, 2, 3, 4, 5].map((level) => (
