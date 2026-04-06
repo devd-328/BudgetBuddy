@@ -1,0 +1,53 @@
+﻿
+> budgetbuddy@0.0.0 build
+> vite build
+
+[36mvite v8.0.3 [32mbuilding client environment for production...[36m[39m
+[2K
+transforming...Ô£ô 1806 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/manifest.webmanifest                          1.13 kB
+dist/index.html                                    3.34 kB Ôöé gzip:  1.18 kB
+dist/assets/index-Dddv83SU.css                    41.31 kB Ôöé gzip:  7.95 kB
+dist/assets/chevron-right-BhemkReH.js              0.13 kB Ôöé gzip:  0.14 kB
+dist/assets/plus-BFkGtD_F.js                       0.15 kB Ôöé gzip:  0.15 kB
+dist/assets/arrow-left-BzKJt1-A.js                 0.16 kB Ôöé gzip:  0.16 kB
+dist/assets/arrow-up-right-D17yESop.js             0.16 kB Ôöé gzip:  0.16 kB
+dist/assets/circle-check-DMKL6Vmy.js               0.17 kB Ôöé gzip:  0.16 kB
+dist/assets/log-out-BFQ89Rsi.js                    0.23 kB Ôöé gzip:  0.19 kB
+dist/assets/mic-CqynHJzf.js                        0.23 kB Ôöé gzip:  0.20 kB
+dist/assets/circle-question-mark-C3DLsKbb.js       0.24 kB Ôöé gzip:  0.20 kB
+dist/assets/eye-B138bH_6.js                        0.63 kB Ôöé gzip:  0.34 kB
+dist/assets/NotFound-CAj2-VVq.js                   0.73 kB Ôöé gzip:  0.42 kB
+dist/assets/Card-svAmgK4M.js                       0.86 kB Ôöé gzip:  0.45 kB
+dist/assets/SegmentedControl-CowPlaNH.js           1.07 kB Ôöé gzip:  0.64 kB
+dist/assets/ProgressBar-BcIGbuZA.js                1.28 kB Ôöé gzip:  0.71 kB
+dist/assets/AmountDisplay-CWqbRcn6.js              1.87 kB Ôöé gzip:  0.89 kB
+dist/assets/zap-C1XMNY5b.js                        2.12 kB Ôöé gzip:  0.98 kB
+dist/assets/ForgotPassword--DnWE4TZ.js             2.70 kB Ôöé gzip:  1.21 kB
+dist/assets/EmptyState-DzQfZhE0.js                 4.03 kB Ôöé gzip:  0.98 kB
+dist/assets/Login-A0onPmEY.js                      4.19 kB Ôöé gzip:  1.74 kB
+dist/assets/workbox-window.prod.es5-DHdPsNjM.js    5.74 kB Ôöé gzip:  2.25 kB
+dist/assets/ResetPassword-CE_6pAYD.js              5.87 kB Ôöé gzip:  1.93 kB
+dist/assets/Signup-DIwKbv4T.js                     6.08 kB Ôöé gzip:  2.30 kB
+dist/assets/AddTransaction-CSPQYO03.js             6.18 kB Ôöé gzip:  2.56 kB
+dist/assets/AIAssistant-yeB1HhOw.js                7.04 kB Ôöé gzip:  2.88 kB
+dist/assets/Borrow-DRpHHiXh.js                     8.35 kB Ôöé gzip:  2.81 kB
+dist/assets/Categories-CkBHsuB2.js                12.06 kB Ôöé gzip:  4.59 kB
+dist/assets/Dashboard-DlaVWVYQ.js                 13.62 kB Ôöé gzip:  4.07 kB
+dist/assets/Settings-WwAXS2Zl.js                  13.73 kB Ôöé gzip:  4.57 kB
+dist/assets/Landing-DBWufxuf.js                   16.61 kB Ôöé gzip:  4.77 kB
+dist/assets/createLucideIcon-CHV7QVyr.js          36.46 kB Ôöé gzip: 13.03 kB
+dist/assets/Analytics-BseEePap.js                180.74 kB Ôöé gzip: 62.84 kB
+dist/assets/supabase-DEWDZqIc.js                 184.19 kB Ôöé gzip: 47.98 kB
+dist/assets/index-BukQTR_O.js                    211.09 kB Ôöé gzip: 67.38 kB
+
+[32mÔ£ô built in 2.50s[39m
+
+PWA v1.2.0
+mode      generateSW
+precache  43 entries (1832.74 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-354287e6.js

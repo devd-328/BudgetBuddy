@@ -5,6 +5,7 @@ import { useAuth } from './context/AuthContext'
 import BottomNav       from './components/BottomNav'
 import Sidebar         from './components/Sidebar'
 import LoadingSpinner  from './components/LoadingSpinner'
+import ReloadPrompt   from './components/pwa/ReloadPrompt'
 
 // Lazy load pages for better bundle performance
 const Landing         = lazy(() => import('./pages/Landing'))
@@ -92,6 +93,7 @@ export default function App() {
       </main>
 
       {showNav && <BottomNav />}
+      <ReloadPrompt />
     </div>
   )
 }
