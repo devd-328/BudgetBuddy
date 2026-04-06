@@ -20,12 +20,14 @@ export default function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col w-60 bg-surface border-r border-border-subtle h-screen sticky top-0 shrink-0">
       {/* Brand */}
-      <div className="px-6 py-5 flex items-center gap-3 border-b border-border-subtle">
-         <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-           <span className="text-accent font-bold text-sm font-mono">B</span>
-         </div>
-         <h1 className="text-base font-bold tracking-tight text-txt-bright">BudgetBuddy</h1>
-      </div>
+       <div className="px-6 py-5 flex items-center gap-3 border-b border-border-subtle">
+          <img 
+            src="/google_consent_logo.png" 
+            alt="BudgetBuddy Logo" 
+            className="w-8 h-8 rounded-lg object-contain"
+          />
+          <h1 className="text-base font-bold tracking-tight text-txt-bright">BudgetBuddy</h1>
+       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1">
         {tabs.map(({ to, icon: Icon, label }) =>

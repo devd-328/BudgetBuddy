@@ -110,8 +110,12 @@ export default function Signup() {
 
         {/* Brand */}
         <div className="text-center mb-6 md:mb-8">
-          <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-3 md:mb-4">
-            <span className="text-accent font-black text-xl font-mono">B</span>
+          <div className="w-12 h-12 md:w-14 md:h-14 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-3 md:mb-4 border border-border-subtle overflow-hidden p-2.5">
+            <img 
+              src="/google_consent_logo.png" 
+              alt="BudgetBuddy Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-txt-bright">BudgetBuddy</h1>
           <p className="text-txt-muted text-xs md:text-sm mt-1">Take control of your finances</p>

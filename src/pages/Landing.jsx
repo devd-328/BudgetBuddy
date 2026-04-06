@@ -129,9 +129,11 @@ export default function Landing() {
         <nav className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
           <a href="#hero" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
-              <span className="text-accent font-bold text-sm font-mono">B</span>
-            </div>
+            <img 
+              src="/google_consent_logo.png" 
+              alt="BudgetBuddy Logo" 
+              className="w-8 h-8 rounded-lg object-contain"
+            />
             <span className="font-bold text-base tracking-tight text-txt-bright">BudgetBuddy</span>
           </a>
 
@@ -403,9 +405,11 @@ export default function Landing() {
       <footer className="border-t border-border-subtle py-8 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
-              <span className="text-accent font-bold text-2xs font-mono">B</span>
-            </div>
+            <img 
+              src="/google_consent_logo.png" 
+              alt="BudgetBuddy Logo" 
+              className="w-6 h-6 rounded-md object-contain"
+            />
             <span className="text-sm text-txt-muted">BudgetBuddy · Free forever</span>
           </div>
           <div className="flex items-center gap-6 text-2xs text-txt-muted">
