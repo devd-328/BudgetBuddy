@@ -29,13 +29,15 @@ export function useDebts(userId) {
     fetchDebts()
   }, [fetchDebts])
 
+  // Total you are owed = sum of remaining balances of all active Lent records
   const theyOweYou = debts
     .filter(d => d.type === 'lent' && d.status !== 'settled')
-    .reduce((sum, d) => sum + Number(d.amount), 0)
+    .reduce((sum, d) => sum + Number(d.remaining_amount !== null ? d.remaining_amount : d.amount), 0)
 
+  // Total you owe = sum of remaining balances of all active Borrowed records
   const youOwe = debts
     .filter(d => d.type === 'owed' && d.status !== 'settled')
-    .reduce((sum, d) => sum + Number(d.amount), 0)
+    .reduce((sum, d) => sum + Number(d.remaining_amount !== null ? d.remaining_amount : d.amount), 0)
 
   const updateStatus = async (id, newStatus) => {
     try {
@@ -55,11 +57,46 @@ export function useDebts(userId) {
     try {
       const { error } = await supabase
         .from('debts')
-        .insert([{ user_id: userId, ...debtData }])
+        .insert([{ 
+          user_id: userId, 
+          ...debtData,
+          remaining_amount: debtData.amount,
+          repayments: [],
+          status: 'active'
+        }])
       if (error) throw error
       await fetchDebts()
     } catch (err) {
       console.error('Insert debt failed: ', err)
+      throw err
+    }
+  }
+
+  const addRepayment = async (debtId, amount, date = new Date().toISOString().split('T')[0]) => {
+    try {
+      const debt = debts.find(d => d.id === debtId)
+      if (!debt) throw new Error('Debt record not found')
+
+      const currentRepayments = Array.isArray(debt.repayments) ? debt.repayments : []
+      const newRepayments = [...currentRepayments, { amount, date }]
+      const currentRemaining = debt.remaining_amount !== null ? Number(debt.remaining_amount) : Number(debt.amount)
+      const newRemainingAmount = Math.max(0, currentRemaining - Number(amount))
+      const newStatus = newRemainingAmount <= 0 ? 'settled' : 'active'
+
+      const { error } = await supabase
+        .from('debts')
+        .update({
+          repayments: newRepayments,
+          remaining_amount: newRemainingAmount,
+          status: newStatus
+        })
+        .eq('id', debtId)
+
+      if (error) throw error
+      await fetchDebts()
+      return { settled: newStatus === 'settled', remaining: newRemainingAmount }
+    } catch (err) {
+      console.error('Add repayment failed: ', err)
       throw err
     }
   }
@@ -71,6 +108,7 @@ export function useDebts(userId) {
     youOwe, 
     updateStatus, 
     addDebt, 
+    addRepayment,
     refetch: fetchDebts 
   }
 }

@@ -32,7 +32,7 @@ export default function SegmentedControl({
     if (activeBtn) {
       setIndicatorStyle({
         width: `${activeBtn.offsetWidth}px`,
-        transform: `translateX(${activeBtn.offsetLeft - container.offsetLeft - 4}px)`,
+        transform: `translateX(${activeBtn.offsetLeft}px)`,
       })
     }
   }, [activeIndex, options])
@@ -44,7 +44,7 @@ export default function SegmentedControl({
   return (
     <div
       ref={containerRef}
-      className={`relative flex bg-interactive rounded-xl p-1 ${className}`}
+      className={`relative flex w-full bg-interactive rounded-xl p-1 ${className}`}
     >
       {/* Sliding indicator */}
       <div

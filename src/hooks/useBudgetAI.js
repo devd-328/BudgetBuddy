@@ -65,21 +65,66 @@ export function useBudgetAI() {
           user_id: userId,
           person_name: data.person_name,
           amount: data.amount,
+          remaining_amount: data.amount,
+          repayments: [],
           type: data.type,
           reason: data.reason || "No reason provided",
-          status: "pending"
+          status: "active",
+          date: new Date().toISOString().split("T")[0]
         }]);
         if (error) throw error;
       } 
       
-      // 3. Update/Settle Debt
-      else if (action === "UPDATE_DEBT") {
-        const { error } = await supabase
+      // 3. Log Repayment (Advanced Tracking)
+      else if (action === "LOG_REPAYMENT") {
+        // Find the active debt for this person
+        const { data: debt, error: fErr } = await supabase
           .from("debts")
-          .update({ status: data.status })
+          .select("*")
           .ilike("person_name", data.person_name)
           .eq("user_id", userId)
-          .eq("status", "pending"); // Only settle pending ones
+          .eq("status", "active")
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (fErr || !debt) {
+          return { error: `I couldn't find an active record for ${data.person_name}.` };
+        }
+
+        const currentRepayments = Array.isArray(debt.repayments) ? debt.repayments : [];
+        const newRepayments = [...currentRepayments, { 
+          amount: data.amount, 
+          date: new Date().toISOString().split("T")[0] 
+        }];
+        const currentRemaining = debt.remaining_amount !== null ? Number(debt.remaining_amount) : Number(debt.amount);
+        const newRemainingAmount = Math.max(0, currentRemaining - Number(data.amount));
+        const newStatus = newRemainingAmount <= 0 ? 'settled' : 'active';
+
+        const { error: uErr } = await supabase
+          .from("debts")
+          .update({
+            repayments: newRepayments,
+            remaining_amount: newRemainingAmount,
+            status: newStatus
+          })
+          .eq("id", debt.id);
+        
+        if (uErr) throw uErr;
+      }
+
+      // 4. Settle Debt (Manual/Write-off)
+      else if (action === "SETTLE_DEBT") {
+        const { error } = await supabase
+          .from("debts")
+          .update({ 
+            status: "settled",
+            remaining_amount: 0 
+          })
+          .ilike("person_name", data.person_name)
+          .eq("user_id", userId)
+          .eq("status", "active"); 
+        
         if (error) throw error;
       }
 
