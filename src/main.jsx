@@ -15,7 +15,7 @@ createRoot(document.getElementById('root')).render(
         <Toaster
           position="top-center"
           toastOptions={{
-            duration: 3000,
+            duration: 2000,
             style: {
               background: '#252545',
               color: '#fff',

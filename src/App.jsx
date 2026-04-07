@@ -50,6 +50,7 @@ const NAV_ROUTES = ['/', '/analytics', '/add', '/borrow', '/ai', '/settings']
 export default function App() {
   const location = useLocation()
   const { isAuthenticated } = useAuth()
+  console.log('[DEBUG] App Auth State:', { isAuthenticated, path: location.pathname });
   const showNav = NAV_ROUTES.includes(location.pathname) && isAuthenticated
   const isLanding = !isAuthenticated && location.pathname === '/'
 

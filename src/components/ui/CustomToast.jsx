@@ -29,7 +29,7 @@ const CustomToast = {
           <XCircle size={18} />
         </button>
       </div>
-    ), { duration: 4000 });
+    ), { duration: 2000 });
   },
 
   error: (message, description = '') => {
@@ -59,7 +59,7 @@ const CustomToast = {
           <XCircle size={18} />
         </button>
       </div>
-    ), { duration: 5000 });
+    ), { duration: 2000 });
   },
 
   warning: (message, description = '') => {
@@ -89,7 +89,7 @@ const CustomToast = {
           <XCircle size={18} />
         </button>
       </div>
-    ), { duration: 4000 });
+    ), { duration: 2000 });
   },
 
   info: (message, description = '') => {
@@ -119,7 +119,7 @@ const CustomToast = {
           <XCircle size={18} />
         </button>
       </div>
-    ), { duration: 4000 });
+    ), { duration: 2000 });
   },
 
   // Standard toast for progress/loading

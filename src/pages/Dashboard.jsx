@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Settings, LogOut, Utensils, Bus, BookOpen, Heart, ShoppingBag, Gamepad2, Zap, HelpCircle, Plus } from 'lucide-react'
+import { Settings, LogOut, Utensils, Bus, BookOpen, Heart, ShoppingBag, Gamepad2, Zap, HelpCircle, Plus, Sparkles, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { generateMonthlySummary } from '../lib/groq'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { usePWAInstall } from '../hooks/usePWAInstall'
 import { Download, Laptop, Smartphone } from 'lucide-react'
@@ -27,6 +28,8 @@ export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuRef = useRef(null)
   const { canInstall, installApp } = usePWAInstall()
+  const [aiSummary, setAiSummary] = useState(null)
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false)
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -43,7 +46,23 @@ export default function Dashboard() {
     navigate('/login')
   }
 
+  const handleGenerateAISummary = async () => {
+    setIsGeneratingSummary(true)
+    try {
+      const summary = await generateMonthlySummary(data.recentTransactions)
+      setAiSummary(summary)
+    } catch (err) {
+      console.error('Summary error:', err)
+    } finally {
+      setIsGeneratingSummary(false)
+    }
+  }
+
   const { data, loading, error } = useDashboardData(user?.id)
+
+  useEffect(() => {
+    console.log('[DEBUG] Dashboard State:', { hasUser: !!user, hasProfile: !!profile, loading, error, hasData: !!data });
+  }, [user, profile, loading, error, data]);
 
   const currency = profile?.currency || 'Rs'
   const displayName = profile?.name || user?.user_metadata?.full_name || user?.user_metadata?.name || 'User'
@@ -159,6 +178,72 @@ export default function Dashboard() {
 
         {/* Left Column */}
         <div className="lg:col-span-2 flex flex-col gap-6 stagger-children">
+
+          {/* AI Insights Card */}
+          <div className="bg-card border border-border-subtle rounded-3xl overflow-hidden relative group">
+            <div className={`absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-transparent opacity-50 transition-opacity duration-slow group-hover:opacity-70`} />
+            
+            <div className="relative p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-accent/20 flex items-center justify-center text-accent">
+                    <Sparkles size={18} />
+                  </div>
+                  <h3 className="text-sm font-bold text-txt-bright tracking-tight">AI Financial Insights</h3>
+                </div>
+                {aiSummary && (
+                  <button onClick={() => setAiSummary(null)} className="text-txt-muted hover:text-txt-primary transition-colors">
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {!aiSummary ? (
+                <div className="flex flex-col items-center py-2">
+                  <p className="text-xs text-txt-muted text-center max-w-[280px] mb-4 leading-relaxed">
+                    Get an intelligent analysis of your {new Date().toLocaleString('default', { month: 'long' })} spending patterns and personalized saving tips.
+                  </p>
+                  <button
+                    onClick={handleGenerateAISummary}
+                    disabled={isGeneratingSummary}
+                    className="w-full h-12 rounded-2xl bg-interactive border border-border-subtle text-xs font-bold text-txt-primary flex items-center justify-center gap-2 
+                               hover:bg-elevated hover:border-accent/30 transition-all duration-fast active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {isGeneratingSummary ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
+                        <span>Analyzing with Llama...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} className="text-accent" />
+                        <span>Generate Monthly Report</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="animate-fade-in">
+                  <div className="bg-elevated/50 border border-border-subtle rounded-2xl p-4 prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-li:my-1 prose-p:my-2 text-txt-secondary leading-relaxed text-sm">
+                    {typeof aiSummary === 'string' ? (
+                      aiSummary.split('\n').map((line, i) => (
+                        <p key={i} className={line.trim().startsWith('-') || line.trim().startsWith('*') || /^\d+\./.test(line.trim()) ? 'pl-4 -indent-4' : ''}>
+                          {line}
+                        </p>
+                      ))
+                    ) : (
+                      <p>Something went wrong with the summary format. Please try again.</p>
+                    )}
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <Link to="/ai" className="text-2xs font-bold text-accent hover:underline flex items-center gap-1 mt-1">
+                      Ask AI follow-up questions →
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Balance Card */}
           <BalanceCard

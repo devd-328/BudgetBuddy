@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { useCategoriesAndBudgets } from '../hooks/useCategoriesAndBudgets'
 import { supabase } from '../lib/supabase'
+import { categorizeTransaction } from '../lib/groq'
 import CustomToast from '../components/ui/CustomToast'
 
 const EXPENSE_CATEGORIES = [
@@ -45,6 +46,7 @@ export default function AddTransaction() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [isListening, setIsListening] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isCategorizing, setIsCategorizing] = useState(false)
   
   // Allocation state
   const [isAllocating, setIsAllocating] = useState(false)
@@ -110,6 +112,26 @@ export default function AddTransaction() {
 
     recognition.onend = () => setIsListening(false)
     recognition.start()
+  }
+  const handleAutoCategorize = async () => {
+    if (type !== 'expense' || !description.trim() || description.length < 3) return
+    
+    setIsCategorizing(true)
+    try {
+      const suggestedCategory = await categorizeTransaction(description)
+      if (suggestedCategory && suggestedCategory !== 'Other') {
+        // Check if it's a valid category in our list
+        const exists = EXPENSE_CATEGORIES.some(c => c.name === suggestedCategory)
+        if (exists) {
+          setCategory(suggestedCategory)
+          CustomToast.info('Auto-Categorized', `AI suggested "${suggestedCategory}" for this transaction.`, { duration: 2000 })
+        }
+      }
+    } catch (err) {
+      console.error('Auto-categorization error:', err)
+    } finally {
+      setIsCategorizing(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -259,7 +281,15 @@ export default function AddTransaction() {
 
         {/* Categories */}
         <div className="mb-8">
-          <p className="overline mb-3 text-txt-muted">{type === 'income' ? 'Income Source' : 'Category'}</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="overline text-txt-muted">{type === 'income' ? 'Income Source' : 'Category'}</p>
+            {isCategorizing && (
+              <div className="flex items-center gap-1.5 animate-pulse">
+                <div className="w-1.5 h-1.5 rounded-full bg-accent animate-bounce" />
+                <span className="text-[10px] font-bold text-accent uppercase tracking-widest">AI Categorizing...</span>
+              </div>
+            )}
+          </div>
           <div className="flex overflow-x-auto pb-4 gap-3 scrollbar-hide snap-x">
             {activeCategories.map(cat => {
               const Icon = cat.icon
@@ -367,6 +397,7 @@ export default function AddTransaction() {
               placeholder="Description (e.g. Lunch with friends)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              onBlur={handleAutoCategorize}
               className="input-field pr-12 h-14 text-sm font-medium"
               required
             />
