@@ -182,7 +182,46 @@ export function useBudgetAI() {
     setError(null);
     
     try {
-      const reply = await callBudgetAgent(userMessage, history);
+      // Fetch latest financial context to feed the AI
+      let contextString = "";
+      if (userId) {
+        const [{ data: txs }, { data: debts }] = await Promise.all([
+          supabase.from('transactions').select('type, amount').eq('user_id', userId),
+          supabase.from('debts').select('type, remaining_amount, person_name').eq('user_id', userId).eq('status', 'active')
+        ]);
+        
+        let totalIncome = 0.0;
+        let totalExpense = 0.0;
+        if (txs) {
+          totalIncome = txs.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount), 0);
+          totalExpense = txs.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount), 0);
+        }
+        
+        let contextText = `User's Current balances (DO NOT mention explicitly unless asked):\n`;
+        contextText += `- Total Income: ${totalIncome}\n`;
+        contextText += `- Total Expense: ${totalExpense}\n`;
+        contextText += `- Overall Balance: ${totalIncome - totalExpense}\n`;
+        
+        const categoryExpenses = {};
+        if (txs) {
+          txs.filter(t => t.type === 'expense').forEach(t => {
+            const cat = t.category || "Other";
+            categoryExpenses[cat] = (categoryExpenses[cat] || 0) + Number(t.amount);
+          });
+        }
+        if (Object.keys(categoryExpenses).length > 0) {
+           contextText += `- Expenses by Category: ${Object.entries(categoryExpenses).map(([c, amt]) => `${c}: ${amt}`).join(', ')}\n`;
+        }
+        
+        if (debts && debts.length > 0) {
+          contextText += `- Active Debts: ${debts.map(d => `${d.person_name} (${d.type}): ${d.remaining_amount} remaining`).join(', ')}\n`;
+        } else {
+          contextText += `- No active debts tracking.\n`;
+        }
+        contextString = contextText;
+      }
+
+      const reply = await callBudgetAgent(userMessage, history, contextString);
       
       // Parse for actions: [ACTION: {"action": "...", "data": {...}}]
       const actionMatch = reply.match(/\[ACTION:\s*({.*?})\]/);

@@ -14,7 +14,7 @@ export default function AIAssistant() {
 
   const defaultMessage = { 
     role: 'assistant', 
-    content: "Hello! I'm your BudgetBuddy Assistant. I work like a Google Assistant for your finances.\n\nTry asking me:\n- 'I lent 500 to Ahmed for lunch'\n- 'Set my food budget to 5000'\n- 'How much did I spend on Transport?'\n- 'Ahmed paid me back'" 
+    content: "Hello! I'm your BudgetBuddy Assistant. I manage your daily transactions and debt records.\n\nTry asking me:\n- 'I just got paid 5000 for my salary'\n- 'What is my current balance?'\n- 'I lent 500 to Ahmed for lunch'\n- 'Ahmed paid me back 200'" 
   }
 
   const [messages, setMessages] = useState(() => {
