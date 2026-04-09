@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Upload, CheckCircle2, ChevronRight, Download, Trash2, LogOut, Grid3x3, Smartphone, Eye, EyeOff, Plus } from 'lucide-react'
+import { ArrowLeft, Upload, CheckCircle2, ChevronRight, Download, Trash2, LogOut, Grid3x3, Smartphone, Eye, EyeOff, Plus, Map } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import CustomToast from '../components/ui/CustomToast'
@@ -19,7 +19,7 @@ const CURRENCIES = [
   { label: 'Dinar (د.ك)', value: 'د.ك' },
 ]
 
-export default function Settings() {
+export default function Settings({ onReplayTour }) {
   const { user, profile, setProfile, signOut } = useAuth()
   const navigate = useNavigate()
 
@@ -407,11 +407,13 @@ export default function Settings() {
           </div>
         </Card>
 
-        {/* PWA Settings */}
-        {(canInstall || (isIOS && !isInstalled)) && (
-          <Card>
-            <p className="section-title mb-4">Application</p>
-            {canInstall ? (
+        {/* Application Settings — always visible */}
+        <Card>
+          <p className="section-title mb-4">Application</p>
+          <div className="space-y-3">
+
+            {/* PWA Install (conditional) */}
+            {canInstall && (
               <button
                 onClick={installApp}
                 className="w-full flex items-center justify-between p-3 
@@ -429,7 +431,10 @@ export default function Settings() {
                 </div>
                 <ChevronRight size={18} className="text-accent" />
               </button>
-            ) : (
+            )}
+
+            {/* iOS manual install hint */}
+            {isIOS && !isInstalled && (
               <div className="p-3 bg-interactive/30 rounded-xl border border-border-subtle/50 text-center">
                 <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-accent mx-auto mb-3">
                   <Smartphone size={18} />
@@ -441,8 +446,32 @@ export default function Settings() {
                 </p>
               </div>
             )}
-          </Card>
-        )}
+
+            {/* Replay Onboarding Tour */}
+            {onReplayTour && (
+              <button
+                onClick={() => {
+                  onReplayTour()
+                  CustomToast.success('Tour restarted', 'Enjoy the guided tour again!')
+                }}
+                className="w-full flex items-center justify-between p-3 
+                           bg-income/5 border border-income/10 rounded-xl 
+                           hover:bg-income/10 active:scale-[0.98] transition-all duration-fast"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-income/20 flex items-center justify-center text-income shrink-0">
+                    <Map size={18} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-semibold text-income">Replay App Tour</h3>
+                    <p className="text-2xs text-txt-muted mt-0.5">Walk through all features again</p>
+                  </div>
+                </div>
+                <ChevronRight size={18} className="text-income" />
+              </button>
+            )}
+          </div>
+        </Card>
 
         {/* Sign Out */}
         <button

@@ -6,6 +6,8 @@ import BottomNav       from './components/BottomNav'
 import Sidebar         from './components/Sidebar'
 import LoadingSpinner  from './components/LoadingSpinner'
 import ReloadPrompt   from './components/pwa/ReloadPrompt'
+import OnboardingOverlay from './components/OnboardingOverlay'
+import { useOnboarding } from './hooks/useOnboarding'
 
 // Lazy load pages for better bundle performance
 const Landing         = lazy(() => import('./pages/Landing'))
@@ -49,14 +51,24 @@ const NAV_ROUTES = ['/', '/analytics', '/add', '/borrow', '/settings']
 
 export default function App() {
   const location = useLocation()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user, profile, markOnboardingComplete } = useAuth()
   console.log('[DEBUG] App Auth State:', { isAuthenticated, path: location.pathname });
   const showNav = NAV_ROUTES.includes(location.pathname) && isAuthenticated
   const isLanding = !isAuthenticated && location.pathname === '/'
 
+  // Display name for onboarding
+  const userName = profile?.name || user?.user_metadata?.full_name || user?.user_metadata?.name || 'there'
+
+  // Onboarding tour — only active for first-login authenticated users
+  const onboarding = useOnboarding(
+    isAuthenticated ? user : null,
+    isAuthenticated ? profile : null,
+    markOnboardingComplete
+  )
+
   return (
     <div className={isLanding ? "" : "app-shell"}>
-      {showNav && <Sidebar />}
+      {showNav && <Sidebar highlightTarget={onboarding.highlightTarget} />}
       
       <main className={isLanding ? "" : "page-content"}>
         <Suspense fallback={<LoadingSpinner fullPage />}>
@@ -83,7 +95,7 @@ export default function App() {
               <ProtectedRoute><AIAssistant /></ProtectedRoute>
             } />
             <Route path="/settings" element={
-              <ProtectedRoute><Settings /></ProtectedRoute>
+              <ProtectedRoute><Settings onReplayTour={onboarding.replayTour} /></ProtectedRoute>
             } />
             <Route path="/categories" element={
               <ProtectedRoute><Categories /></ProtectedRoute>
@@ -95,8 +107,25 @@ export default function App() {
         </Suspense>
       </main>
 
-      {showNav && <BottomNav />}
+      {showNav && <BottomNav highlightTarget={onboarding.highlightTarget} />}
       <ReloadPrompt />
+
+      {/* Onboarding overlay — mounts for first-login users only */}
+      {isAuthenticated && onboarding.isVisible && (
+        <OnboardingOverlay
+          currentStep={onboarding.currentStep}
+          stepIndex={onboarding.stepIndex}
+          showMore={onboarding.showMore}
+          progress={onboarding.progress}
+          totalTourSteps={onboarding.totalTourSteps}
+          userName={userName}
+          onPrimary={onboarding.handlePrimary}
+          onSecondary={onboarding.handleSecondary}
+          onTertiary={onboarding.handleTertiary}
+          onSkip={onboarding.handleSkip}
+        />
+      )}
     </div>
   )
 }
+

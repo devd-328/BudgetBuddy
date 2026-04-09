@@ -47,6 +47,18 @@ export function AuthProvider({ children }) {
     setProfile(null)
   }
 
+  /** Called when onboarding tour is completed or skipped */
+  async function markOnboardingComplete(userId) {
+    if (!userId) return
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_first_login: false })
+      .eq('user_id', userId)
+    if (!error) {
+      setProfile((prev) => prev ? { ...prev, is_first_login: false } : prev)
+    }
+  }
+
   const value = {
     user,
     profile,
@@ -54,6 +66,7 @@ export function AuthProvider({ children }) {
     loading,
     signOut,
     isAuthenticated: !!user,
+    markOnboardingComplete,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
