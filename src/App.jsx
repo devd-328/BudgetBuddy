@@ -45,7 +45,7 @@ function HomeRoute() {
 }
 
 /** Routes that show the bottom nav shell */
-const NAV_ROUTES = ['/', '/analytics', '/add', '/borrow', '/ai', '/settings']
+const NAV_ROUTES = ['/', '/analytics', '/add', '/borrow', '/settings']
 
 export default function App() {
   const location = useLocation()

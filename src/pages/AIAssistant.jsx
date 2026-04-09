@@ -49,7 +49,7 @@ export default function AIAssistant() {
         clearHistory()
         setMessages([defaultMessage])
         localStorage.removeItem("budget_ai_messages")
-        toast.success("Chat history cleared")
+        toast.success("Chat history cleared", { duration: 2000 })
       },
       null,
       'Clear History',
@@ -156,7 +156,7 @@ export default function AIAssistant() {
   }
 
   return (
-    <div className="page-enter flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)]">
+    <div className="page-enter flex flex-col h-[calc(100dvh-3rem)] md:h-[calc(100dvh-4rem)] xl:h-[calc(100dvh-6rem)]">
       {/* Header */}
       <div className="py-4 flex items-center justify-between shrink-0 z-10 border-b border-border-subtle mb-2">
         <div className="flex items-center gap-3">
@@ -168,9 +168,12 @@ export default function AIAssistant() {
           >
             <ArrowLeft size={16} />
           </button>
-          <h1 className="text-xl font-bold flex items-center gap-2 tracking-tight">
-            <Bot size={22} className="text-accent" /> AI Assistant
-          </h1>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold flex items-center gap-2 tracking-tight">
+              <Bot size={22} className="text-accent" /> AI Assistant
+            </h1>
+            <span className="text-[10px] text-txt-muted ml-[30px] -mt-1 font-medium tracking-wide">Powered by Groq</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -223,23 +226,13 @@ export default function AIAssistant() {
       </div>
 
       {/* Input */}
-      <div className="pt-3 mt-2 border-t border-border-subtle shrink-0 z-10">
-        <div className="flex items-end gap-2 bg-card p-2 rounded-2xl border border-border-subtle">
+      <div className="pt-2 shrink-0 z-10 mb-1 lg:mb-0">
+        <div className="flex items-end gap-2 bg-interactive p-1.5 rounded-[26px] border border-border-subtle shadow-sm">
           <button
             type="button"
-            onClick={handleMicClick}
-            className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-fast relative
-              ${isListening
-                ? 'bg-expense/20 text-expense animate-pulse'
-                : isSpeaking
-                  ? 'bg-accent/20 text-accent'
-                  : 'bg-interactive text-txt-muted hover:text-txt-primary'
-              }`}
+            className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-card border border-border-subtle text-txt-muted hover:text-txt-primary hover:bg-elevated transition-colors"
           >
-            {isSpeaking && (
-              <span className="absolute inset-0 rounded-xl border-2 border-accent animate-ping opacity-25" />
-            )}
-            <Mic size={18} />
+            <span className="text-xl leading-none font-light mb-0.5">+</span>
           </button>
 
           <textarea
@@ -254,22 +247,35 @@ export default function AIAssistant() {
               }
             }}
             className="w-full bg-transparent text-txt-primary placeholder:text-txt-muted resize-none 
-                       outline-none py-2.5 text-sm max-h-[100px]"
+                       outline-none py-2.5 px-1 text-[15px] max-h-[100px]"
           />
 
-          <button
-            onClick={() => handleSend(inputText)}
-            className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-[background,color] duration-fast
-              ${inputText.trim()
-                ? 'bg-accent text-txt-inverted shadow-glow-accent'
-                : 'bg-interactive text-txt-muted'
-              }`}
-            disabled={!inputText.trim()}
-          >
-            <Send size={16} />
-          </button>
+          {inputText.trim() ? (
+            <button
+              onClick={() => handleSend(inputText)}
+              className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-txt-primary text-txt-inverted shadow-sm transition-[transform,background] duration-fast active:scale-95 hover:bg-white"
+            >
+              <Send size={16} className="-ml-0.5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleMicClick}
+              className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-fast relative shadow-sm
+                ${isListening
+                  ? 'bg-expense text-txt-inverted animate-pulse'
+                  : isSpeaking
+                    ? 'bg-accent/20 text-accent'
+                    : 'bg-card border border-border-subtle text-txt-primary hover:bg-elevated'
+                }`}
+            >
+              {isSpeaking && (
+                <span className="absolute inset-0 rounded-full border-2 border-accent animate-ping opacity-25" />
+              )}
+              <Mic size={18} />
+            </button>
+          )}
         </div>
-        <p className="text-2xs text-center text-txt-muted mt-3">Powered by Groq · Llama 3.3 70B</p>
       </div>
     </div>
   )
