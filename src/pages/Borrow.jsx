@@ -38,6 +38,7 @@ export default function Borrow() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedDebt, setSelectedDebt] = useState(null)
   const [paymentAmount, setPaymentAmount] = useState('')
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
   const [expandedId, setExpandedId] = useState(null)
   
   const currency = profile?.currency || 'Rs'
@@ -84,7 +85,7 @@ export default function Borrow() {
 
     setFormLoading(true)
     try {
-      const result = await addRepayment(selectedDebt.id, Number(paymentAmount))
+      const result = await addRepayment(selectedDebt.id, Number(paymentAmount), paymentDate)
       CustomToast.success(
         result.settled ? 'Debt Settled!' : 'Payment Recorded',
         result.settled 
@@ -93,6 +94,7 @@ export default function Borrow() {
       )
       setShowPaymentModal(false)
       setPaymentAmount('')
+      setPaymentDate(new Date().toISOString().split('T')[0])
       setSelectedDebt(null)
     } catch (err) {
       CustomToast.error('Payment Failed', 'An error occurred while recording the payment.')
@@ -334,7 +336,7 @@ export default function Borrow() {
             <div className="w-12 h-1.5 bg-border-subtle rounded-full mx-auto mb-8 opacity-40" />
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-xl font-black tracking-tight text-txt-bright">Log New Debt</h2>
-              <button onClick={() => setShowAddForm(false)} className="w-10 h-10 rounded-xl bg-interactive/50 text-txt-muted hover:text-txt-primary transition-all duration-300">
+              <button onClick={() => setShowAddForm(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-interactive/50 text-txt-muted hover:text-txt-primary transition-all duration-300">
                 <X size={20} />
               </button>
             </div>
@@ -386,7 +388,7 @@ export default function Borrow() {
                 <h2 className="text-xl font-black tracking-tight text-txt-bright">Log Payment</h2>
                 <p className="text-xs text-txt-muted font-medium mt-1">For {selectedDebt?.person_name}</p>
               </div>
-              <button onClick={() => setShowPaymentModal(false)} className="w-10 h-10 rounded-xl bg-interactive/50 text-txt-muted hover:text-txt-primary transition-all duration-300">
+              <button onClick={() => setShowPaymentModal(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-interactive/50 text-txt-muted hover:text-txt-primary transition-all duration-300">
                 <X size={20} />
               </button>
             </div>
@@ -412,10 +414,15 @@ export default function Borrow() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-canvas/40 border border-border-subtle/10 flex flex-col gap-1">
+                <div className="p-4 rounded-2xl bg-canvas/40 border border-border-subtle/10 flex flex-col gap-1 overflow-hidden relative">
                   <Calendar size={14} className="text-txt-muted mb-1" />
-                  <span className="text-[9px] font-black uppercase text-txt-muted tracking-widest">Date</span>
-                  <span className="text-xs font-bold">{new Date().toLocaleDateString()}</span>
+                  <label className="text-[9px] font-black uppercase text-txt-muted tracking-widest">Date</label>
+                  <input 
+                    type="date"
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    className="bg-transparent border-none p-0 m-0 text-xs font-bold text-txt-primary focus:ring-0 outline-none w-full cursor-pointer"
+                  />
                 </div>
                 <div className="p-4 rounded-2xl bg-canvas/40 border border-border-subtle/10 flex flex-col gap-1">
                   <Wallet size={14} className="text-accent mb-1" />
