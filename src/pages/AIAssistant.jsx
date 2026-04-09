@@ -156,7 +156,7 @@ export default function AIAssistant() {
   }
 
   return (
-    <div className="page-enter flex flex-col h-[calc(100dvh-3rem)] md:h-[calc(100dvh-4rem)] xl:h-[calc(100dvh-6rem)]">
+    <div className="page-enter flex flex-col bg-canvas fixed inset-0 z-50 px-4 pt-4 pb-3 md:relative md:inset-auto md:z-auto md:p-0 md:h-[calc(100dvh-4rem)] xl:h-[calc(100dvh-6rem)]">
       {/* Header */}
       <div className="py-4 flex items-center justify-between shrink-0 z-10 border-b border-border-subtle mb-2">
         <div className="flex items-center gap-3">
@@ -228,13 +228,6 @@ export default function AIAssistant() {
       {/* Input */}
       <div className="pt-2 shrink-0 z-10 mb-1 lg:mb-0">
         <div className="flex items-end gap-2 bg-interactive p-1.5 rounded-[26px] border border-border-subtle shadow-sm">
-          <button
-            type="button"
-            className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-card border border-border-subtle text-txt-muted hover:text-txt-primary hover:bg-elevated transition-colors"
-          >
-            <span className="text-xl leading-none font-light mb-0.5">+</span>
-          </button>
-
           <textarea
             rows={1}
             placeholder="Message AI..."
@@ -247,7 +240,7 @@ export default function AIAssistant() {
               }
             }}
             className="w-full bg-transparent text-txt-primary placeholder:text-txt-muted resize-none 
-                       outline-none py-2.5 px-1 text-[15px] max-h-[100px]"
+                       outline-none py-2.5 pl-3 pr-1 text-[15px] max-h-[100px]"
           />
 
           {inputText.trim() ? (
