@@ -73,9 +73,8 @@ function Reveal({ children, delay = 0, className = '' }) {
   return (
     <div
       ref={ref}
-      className={`transition-[opacity,transform] duration-700 ease-out ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-      } ${className}`}
+      className={`transition-[opacity,transform] duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+        } ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
@@ -120,18 +119,17 @@ export default function Landing() {
 
       {/* ═══ NAVBAR ═══ */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-[background,border-color,backdrop-filter] duration-300 ${
-          scrolled
+        className={`fixed top-0 left-0 right-0 z-50 transition-[background,border-color,backdrop-filter] duration-300 ${scrolled
             ? 'bg-canvas/90 backdrop-blur-xl border-b border-border-subtle'
             : 'bg-transparent border-b border-transparent'
-        }`}
+          }`}
       >
         <nav className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
           <a href="#hero" className="flex items-center gap-2.5">
-            <img 
-              src="/google_consent_logo.png" 
-              alt="BudgetBuddy Logo" 
+            <img
+              src="/google_consent_logo.png"
+              alt="BudgetBuddy Logo"
               className="w-8 h-8 rounded-lg object-contain"
             />
             <span className="font-bold text-base tracking-tight text-txt-bright">BudgetBuddy</span>
@@ -209,7 +207,7 @@ export default function Landing() {
                   to="/signup"
                   className="btn-primary text-base px-7 py-4 flex items-center justify-center gap-2"
                 >
-                  Start for free <ArrowRight size={16} />
+                  Sign up <ArrowRight size={16} />
                 </Link>
                 <a
                   href="#features"
@@ -405,9 +403,9 @@ export default function Landing() {
       <footer className="border-t border-border-subtle py-8 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <img 
-              src="/google_consent_logo.png" 
-              alt="BudgetBuddy Logo" 
+            <img
+              src="/google_consent_logo.png"
+              alt="BudgetBuddy Logo"
               className="w-6 h-6 rounded-md object-contain"
             />
             <span className="text-sm text-txt-muted">BudgetBuddy · Free forever</span>
