@@ -49,7 +49,7 @@ export default function AIAssistant() {
         clearHistory()
         setMessages([defaultMessage])
         localStorage.removeItem("budget_ai_messages")
-        toast.success("Chat history cleared", { duration: 2000 })
+        CustomToast.success("Chat history cleared")
       },
       null,
       'Clear History',
