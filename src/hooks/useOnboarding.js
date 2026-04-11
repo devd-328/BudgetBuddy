@@ -128,6 +128,116 @@ export function useOnboarding(user, profile, markOnboardingComplete) {
     setIsVisible(true)
   }, [navigate])
 
+  // Tooltip position state
+  const [tooltipPosition, setTooltipPosition] = useState(null)
+
+  // Re-calculate tooltip position when step or visibility changes
+  useEffect(() => {
+    let target = null;
+    let hasScrolled = false;
+    let pollInterval = null;
+    let frame = null;
+    
+    if (!isVisible || !currentStep?.highlight) {
+      setTooltipPosition(null)
+      return
+    }
+
+    const updatePosition = () => {
+      target = document.getElementById(currentStep.highlight)
+      if (!target) {
+        setTooltipPosition(null)
+        return
+      }
+
+      if (!hasScrolled) {
+        hasScrolled = true;
+        const targetRect = target.getBoundingClientRect();
+        if (targetRect.top < 80 || targetRect.bottom > window.innerHeight - 80) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
+      // Add the spotlight class directly via DOM
+      target.classList.add('onboarding-spotlight');
+
+      const rect = target.getBoundingClientRect()
+      
+      // Determine placement (fallback to smart placement if not specified)
+      let placement = currentStep.placement;
+      if (!placement) {
+        placement = rect.top > window.innerHeight / 2 ? 'above' : 'below';
+      }
+
+      // Calculate horizontal center
+      let centerX = rect.left + rect.width / 2;
+      
+      // Clamp for mobile screens so tooltip doesn't overflow
+      // Tooltip is max 320px (half = 160) on desktop, 280px (half=140) on mobile
+      const padding = 16;
+      const tooltipHalfWidth = window.innerWidth < 768 ? 140 : 160;
+      
+      let clampedX = centerX;
+      if (clampedX - tooltipHalfWidth < padding) {
+        clampedX = tooltipHalfWidth + padding;
+      } else if (clampedX + tooltipHalfWidth > window.innerWidth - padding) {
+        clampedX = window.innerWidth - tooltipHalfWidth - padding;
+      }
+      
+      const arrowOffset = centerX - clampedX; // How much the arrow needs to shift to point accurately
+
+      if (placement === 'above') {
+        setTooltipPosition({
+          top: rect.top - 12, // Space for arrow pointing down
+          left: clampedX,
+          arrowOffset,
+          placement: 'above'
+        })
+      } else if (placement === 'below') {
+        setTooltipPosition({
+          top: rect.bottom + 12, // Space for arrow pointing up
+          left: clampedX,
+          arrowOffset,
+          placement: 'below'
+        })
+      } else {
+        // 'right' or fallback
+        setTooltipPosition({
+          top: rect.top + rect.height / 2,
+          left: Math.min(rect.right + 12, window.innerWidth - (window.innerWidth < 768 ? 280 : 320) - padding), // Basic clamp for right
+          arrowOffset: 0,
+          placement: 'right'
+        })
+      }
+    }
+
+    // Poll for the target element to handle async route rendering (e.g. data fetching/skeletons)
+    pollInterval = setInterval(() => {
+      const found = document.getElementById(currentStep.highlight)
+      if (found) {
+        clearInterval(pollInterval)
+        pollInterval = null
+        frame = requestAnimationFrame(() => {
+          updatePosition()
+        })
+      }
+    }, 150)
+
+    // Handle scroll and resize to keep tooltip locked to element
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, { passive: true })
+    
+    return () => {
+      if (pollInterval) clearInterval(pollInterval)
+      if (frame) cancelAnimationFrame(frame)
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition)
+      if (target) {
+        target.classList.remove('onboarding-spotlight')
+      }
+    }
+  }, [isVisible, currentStep, stepIndex])
+
   // Progress: how far through the tour sections (steps 1–6)
   const tourSteps = ONBOARDING_STEPS.filter(
     (s) => !['greeting', 'action-nudge', 'complete'].includes(s.id)
@@ -150,5 +260,6 @@ export function useOnboarding(user, profile, markOnboardingComplete) {
     handleSkip,
     replayTour,
     highlightTarget: currentStep?.highlight ?? null,
+    tooltipPosition,
   }
 }

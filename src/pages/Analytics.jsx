@@ -3,12 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useAnalyticsData } from '../hooks/useAnalyticsData'
+import { supabase } from '../lib/supabase'
 
 import SegmentedControl from '../components/ui/SegmentedControl'
 import AmountDisplay from '../components/ui/AmountDisplay'
 import ProgressBar from '../components/ui/ProgressBar'
 import Skeleton from '../components/ui/Skeleton'
 import Card from '../components/ui/Card'
+import TransactionRow from '../components/dashboard/TransactionRow'
+import EmptyState from '../components/EmptyState'
+import CustomToast from '../components/ui/CustomToast'
 
 // Chart.js — only for Line chart
 import {
@@ -103,10 +107,36 @@ export default function Analytics() {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
   const [period, setPeriod] = useState('month')
-  const { donutData, lineData, topCategory, budgetProgress, loading } = useAnalyticsData(user?.id, period)
+  const { donutData, lineData, topCategory, budgetProgress, transactions, loading, refetch } = useAnalyticsData(user?.id, period)
 
   const currency = profile?.currency || 'Rs'
   const totalPeriodSpend = donutData.reduce((sum, d) => sum + d.amount, 0)
+
+  const handleEditTransaction = (transaction) => {
+    navigate(`/add?edit=${transaction.id}`)
+  }
+
+  const handleDeleteTransaction = (transaction) => {
+    CustomToast.confirm(
+      'Delete transaction?',
+      `This will remove "${transaction.description}" and update your balance immediately.`,
+      async () => {
+        const { error } = await supabase
+          .from('transactions')
+          .delete()
+          .eq('id', transaction.id)
+          .eq('user_id', user.id)
+
+        if (error) {
+          CustomToast.error('Delete failed', error.message || 'Could not remove the transaction.')
+          return
+        }
+
+        CustomToast.success('Transaction deleted', 'The totals and charts have been refreshed.')
+        refetch()
+      }
+    )
+  }
 
   // Line Chart Config
   const lineChartData = {
@@ -214,7 +244,7 @@ export default function Analytics() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 stagger-children">
 
           {/* ═══ Doughnut + Legend ═══ */}
-          <Card>
+          <Card id="analytics-chart">
             {donutData.length === 0 ? (
               <div className="text-center text-txt-muted text-sm py-8">
                 No expenses for this period
@@ -313,6 +343,36 @@ export default function Analytics() {
                 </div>
               </Card>
             )}
+
+            <Card>
+              <div className="flex items-center justify-between mb-4">
+                <p className="section-title">Transactions</p>
+                <span className="text-2xs text-txt-muted uppercase tracking-[0.12em]">
+                  {transactions.length} in this period
+                </span>
+              </div>
+
+              {transactions.length === 0 ? (
+                <EmptyState
+                  illustration="transactions"
+                  title="No transactions yet"
+                  message="Add income or expenses to start tracking your balance in real time."
+                  action={{ label: 'Add Transaction', onClick: () => navigate('/add') }}
+                />
+              ) : (
+                <div className="divide-y divide-border-subtle">
+                  {transactions.map((tx) => (
+                    <TransactionRow
+                      key={tx.id}
+                      transaction={tx}
+                      currency={currency}
+                      onEdit={handleEditTransaction}
+                      onDelete={handleDeleteTransaction}
+                    />
+                  ))}
+                </div>
+              )}
+            </Card>
           </div>
         </div>
       )}

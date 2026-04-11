@@ -8,7 +8,8 @@ export function useAnalyticsData(userId, period) {
     donutData: [],
     lineData: { labels: [], income: [], expense: [] },
     topCategory: null,
-    budgetProgress: []
+    budgetProgress: [],
+    transactions: []
   })
   const [loading, setLoading] = useState(true)
 
@@ -131,6 +132,9 @@ export function useAnalyticsData(userId, period) {
          donutData,
          topCategory,
          budgetProgress,
+         transactions: (txs || [])
+           .filter((tx) => tx.date >= startStr)
+           .sort((a, b) => new Date(b.date) - new Date(a.date)),
          lineData: {
             labels: lineLabels,
             income: lineIncome,
@@ -150,5 +154,20 @@ export function useAnalyticsData(userId, period) {
     fetchData()
   }, [fetchData])
 
-  return { ...data, loading }
+  useEffect(() => {
+    if (!userId) return undefined
+
+    const channel = supabase
+      .channel(`analytics-live-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories', filter: `user_id=eq.${userId}` }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'budgets', filter: `user_id=eq.${userId}` }, fetchData)
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [fetchData, userId])
+
+  return { ...data, loading, refetch: fetchData }
 }

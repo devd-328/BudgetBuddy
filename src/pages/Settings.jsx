@@ -267,7 +267,7 @@ export default function Settings({ onReplayTour }) {
         </Link>
 
         {/* Profile Configuration */}
-        <Card>
+        <Card id="settings-profile">
           <p className="section-title mb-4">Profile</p>
           <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div>

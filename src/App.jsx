@@ -123,6 +123,7 @@ export default function App() {
           onSecondary={onboarding.handleSecondary}
           onTertiary={onboarding.handleTertiary}
           onSkip={onboarding.handleSkip}
+          tooltipPosition={onboarding.tooltipPosition}
         />
       )}
     </div>

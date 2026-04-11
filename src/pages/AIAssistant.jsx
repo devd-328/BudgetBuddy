@@ -226,7 +226,7 @@ export default function AIAssistant() {
       </div>
 
       {/* Input */}
-      <div className="pt-2 shrink-0 z-10 mb-1 lg:mb-0">
+      <div id="ai-input-tray" className="pt-2 shrink-0 z-10 mb-1 lg:mb-0">
         <div className="flex items-end gap-2 bg-interactive p-1.5 rounded-[26px] border border-border-subtle shadow-sm">
           <textarea
             rows={1}

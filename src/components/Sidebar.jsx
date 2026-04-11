@@ -42,7 +42,7 @@ export default function Sidebar({ highlightTarget }) {
                     isActive 
                       ? 'bg-interactive text-txt-primary font-medium' 
                       : 'text-txt-muted hover:bg-interactive/50 hover:text-txt-secondary'
-                 } ${highlightTarget === navId ? 'onboarding-highlight' : ''}`
+                 } ${highlightTarget === navId ? 'onboarding-spotlight' : ''}`
               }
            >
               {({ isActive }) => (
@@ -68,7 +68,7 @@ export default function Sidebar({ highlightTarget }) {
                   isActive 
                     ? 'bg-interactive text-txt-primary font-medium' 
                     : 'text-txt-muted hover:bg-interactive/50 hover:text-txt-secondary'
-               } ${highlightTarget === 'nav-settings' ? 'onboarding-highlight' : ''}`
+               } ${highlightTarget === 'nav-settings' ? 'onboarding-spotlight' : ''}`
             }
          >
             <Settings size={18} strokeWidth={1.5} />

@@ -1,8 +1,11 @@
-/**
+﻿/**
  * BudgetBuddy Onboarding Tour Steps
  * Each step maps to a real section of the app.
- * `highlight` matches the nav item IDs in BottomNav / Sidebar.
- * `route`     is the path to navigate to when this step begins.
+ * `highlight`  matches the element ID to spotlight on that page.
+ * `route`      is the path to navigate to when this step begins.
+ * `badge`      short text-only label for the context pill (tooltip steps only).
+ * `shortTitle` concise 3-5 word title for the tooltip card.
+ * `shortTip`   max 2 sentences shown in the compact tooltip.
  */
 
 export const ONBOARDING_STEPS = [
@@ -10,114 +13,98 @@ export const ONBOARDING_STEPS = [
     id: 'greeting',
     route: '/',
     highlight: null,
-    emoji: '👋',
-    title: 'Welcome to BudgetBuddy!',
+    emoji: '\u{1F44B}',
+    title: 'Take control of your money',
     getMessage: (name) =>
-      `Hey ${name}! 🎉 I'm your BudgetBuddy assistant.\n\nI help you track income, expenses, debts, and budgets — all in one place, powered by AI.\n\nWould you like a quick tour of the app?`,
-    primaryAction: 'Yes, show me around!',
-    secondaryAction: "I'll explore myself",
+      `Hey ${name}! BudgetBuddy helps you track income, expenses, budgets, and debts in one place.\n\nYour balance updates instantly, so you always know where you stand.\n\nWould you like to start by adding your first transaction or take a quick tour?`,
+    primaryAction: 'Add my first transaction',
+    secondaryAction: 'Take a quick tour',
   },
   {
-    id: 'dashboard',
-    route: '/',
-    highlight: 'nav-home',
-    emoji: '📊',
-    title: 'Dashboard',
-    getMessage: () =>
-      `This is your Dashboard — your financial command centre.\n\nYou'll see your real-time balance, income vs expenses, weekly spending bars, and AI-generated monthly insights. Everything updates the moment you add a transaction.`,
-    primaryAction: 'Next →',
-    secondaryAction: 'Tell me more',
-    moreInfo:
-      `The AI Insights card at the top can generate a personalised spending analysis for you by tapping "Generate Monthly Report". The balance card shows income, expenses, and money you have lent out.`,
-  },
-  {
-    id: 'analytics',
-    route: '/analytics',
-    highlight: 'nav-analytics',
-    emoji: '📈',
-    title: 'Analytics',
-    getMessage: () =>
-      `The Analytics page shows you exactly where your money goes.\n\nYou'll find category breakdowns, spending trends by month, and visual charts so you can spot patterns at a glance.`,
-    primaryAction: 'Next →',
-    secondaryAction: 'Tell me more',
-    moreInfo:
-      `You can filter by month and see how your spending in each category compares. Look for the categories eating your budget the most — that is where your savings potential is.`,
-  },
-  {
-    id: 'add',
+    id: 'add-first',
     route: '/add',
-    highlight: 'nav-add',
-    emoji: '➕',
-    title: 'Add Record',
+    highlight: 'add-record-hero',
+    placement: 'below',
+    badge: 'First Step',
+    shortTitle: 'Start with one entry',
+    shortTip: 'Log your first income or expense here. Add an amount, choose a category, and save to see BudgetBuddy in action.',
+    emoji: '\u{2795}',
+    title: 'Start with one quick entry',
     getMessage: () =>
-      `The Add Record page is where you log every rupee in and out.\n\nType a description and the AI will suggest the right category automatically. You can log income, expenses, voice notes, and even recurring entries.`,
-    primaryAction: 'Next →',
-    secondaryAction: 'Tell me more',
+      `Log your first income or expense here.\n\nEnter the amount, choose a category, and save to see BudgetBuddy in action right away.`,
+    primaryAction: 'Continue',
+    secondaryAction: 'Skip',
     moreInfo:
-      `Pro tip: You can also just tell the AI Assistant "I spent 500 on dinner" and it will log it for you without opening this page at all!`,
+      `BudgetBuddy is designed to feel fast and lightweight. Once you save a transaction, your dashboard updates instantly so you can immediately see the result.`,
   },
   {
-    id: 'borrow',
-    route: '/borrow',
-    highlight: 'nav-borrow',
-    emoji: '🤝',
-    title: 'Borrow & Lend',
+    id: 'overview',
+    route: '/',
+    highlight: 'dashboard-balance',
+    placement: 'below',
+    badge: 'Overview',
+    shortTitle: 'Your money snapshot',
+    shortTip: 'Your balance, recent activity, and top spending categories update automatically whenever you add, edit, or delete a transaction.',
+    emoji: '\u{1F4CA}',
+    title: 'This is your money snapshot',
     getMessage: () =>
-      `Borrow & Lend tracks the money you owe others — and what others owe you.\n\nAdd a debt record, log partial repayments over time, and mark debts as settled when they are cleared. No more forgetting who owes what.`,
-    primaryAction: 'Next →',
+      `This dashboard is your live financial overview.\n\nYour balance, recent activity, and top expenses update automatically as your transactions change.`,
+    primaryAction: 'Next ->',
     secondaryAction: 'Tell me more',
     moreInfo:
-      `The AI also understands commands like "Ahmed paid me back 500" or "I borrowed 2000 from my dad for rent" — it will create the records for you instantly.`,
+      `Use this page as your financial home base. It helps you quickly confirm new records, catch balance changes, and spot which spending categories are growing fastest.`,
+  },
+  {
+    id: 'set-goals',
+    route: '/categories',
+    highlight: null,
+    emoji: '\u{1F3AF}',
+    title: 'Set spending goals',
+    getMessage: () =>
+      `Create category budget limits so your money has a plan.\n\nThis helps you control spending and understand how much is still left to assign.`,
+    primaryAction: 'Set a budget goal',
+    secondaryAction: 'Do this later',
   },
   {
     id: 'ai',
     route: '/ai',
-    highlight: 'nav-ai',
-    emoji: '🤖',
-    title: 'AI Assistant',
+    highlight: 'ai-input-tray',
+    placement: 'above',
+    badge: 'AI Assistant',
+    shortTitle: 'Manage money by chatting',
+    shortTip: 'Ask BudgetBuddy to log transactions, check balances, or help set budgets using plain language.',
+    emoji: '\u{1F916}',
+    title: 'Manage money by chatting',
     getMessage: () =>
-      `Meet your AI Assistant, powered by Llama 3.3.\n\nYou can chat in plain English to log transactions, check your balance, manage debts, or ask for financial advice. It understands context and takes real actions on your data.`,
-    primaryAction: 'Next →',
-    secondaryAction: 'Tell me more',
+      `You can talk to BudgetBuddy in plain language to manage your finances faster.\n\nTry things like "I spent 500 on groceries", "What is my balance?", or "Set a budget for Food".`,
+    primaryAction: 'Try AI',
+    secondaryAction: 'Finish',
     moreInfo:
-      `Try saying things like:\n• "What is my current balance?"\n• "I spent 1200 on groceries"\n• "Set a budget of 5000 for Food this month"\n\nThe AI will handle it all instantly.`,
-  },
-  {
-    id: 'settings',
-    route: '/settings',
-    highlight: 'nav-settings',
-    emoji: '⚙️',
-    title: 'Settings',
-    getMessage: () =>
-      `Settings is where you personalise BudgetBuddy.\n\nSet your display name, choose your currency (Rs, $, €, and more), upload a profile picture, manage categories & budgets, and export your data as CSV anytime.`,
-    primaryAction: 'Next →',
-    secondaryAction: 'Tell me more',
-    moreInfo:
-      `The "Categories & Budgets" section lets you set monthly spending limits per category. Once you set a limit, BudgetBuddy will warn you when you are approaching it.`,
+      `The AI is a shortcut, not a replacement for the app. Use it whenever you want to log something quickly, ask for a balance update, or set up simple financial actions without tapping through screens.`,
   },
   {
     id: 'action-nudge',
     route: '/',
     highlight: null,
-    emoji: '🚀',
+    emoji: '\u{1F680}',
     title: "You're all set!",
     getMessage: (name) =>
-      `You're ready, ${name}! 🚀\n\nThe best way to start is to add your first transaction or set a budget. What would you like to do first?`,
-    primaryAction: 'Add a transaction',
-    secondaryAction: "I'll do it later",
-    tertiaryAction: 'Set up a budget',
-    primaryRoute: '/add',
-    tertiaryRoute: '/categories',
+      `You're ready, ${name}!\n\nWould you like to set a budget goal now, try the AI assistant, or head back to the dashboard?`,
+    primaryAction: 'Set a budget goal',
+    secondaryAction: 'Go to dashboard',
+    tertiaryAction: 'Try AI',
+    primaryRoute: '/categories',
+    tertiaryRoute: '/ai',
   },
   {
     id: 'complete',
     route: '/',
     highlight: null,
-    emoji: '💙',
-    title: 'All done!',
+    emoji: '\u{1F499}',
+    title: "You're ready",
     getMessage: () =>
-      `You are all set! I am here anytime you have questions — just tap the AI Assistant button and ask.\n\nHappy budgeting! 💙`,
-    primaryAction: "Let's go!",
+      `Your setup is complete.\n\nStart tracking, planning, and checking your progress anytime from the dashboard.`,
+    primaryAction: 'Go to Dashboard',
     secondaryAction: null,
   },
 ]

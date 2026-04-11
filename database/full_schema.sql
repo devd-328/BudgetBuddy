@@ -43,10 +43,13 @@ CREATE TABLE IF NOT EXISTS categories (
   name TEXT NOT NULL,
   icon TEXT NOT NULL,
   color TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'expense' CHECK (type IN ('income', 'expense')),
   budget_limit DECIMAL(12, 2)
 );
 
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+CREATE UNIQUE INDEX IF NOT EXISTS unique_category_name_per_user_and_type
+ON categories (user_id, lower(name), type);
 DROP POLICY IF EXISTS "Users can manage own categories" ON categories;
 CREATE POLICY "Users can manage own categories" ON categories FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 

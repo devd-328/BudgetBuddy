@@ -208,6 +208,14 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
+  .animate-scale-in {
+    animation: scale-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: var(--overlay-transform, translateX(0)) scale(0.95); }
+    to   { opacity: 1; transform: var(--overlay-transform, translateX(0)) scale(1); }
+  }
+
   /* ═══ Stagger Children ═══ */
   .stagger-children > * {
     opacity: 0;
@@ -282,29 +290,101 @@
     display: none;
   }
 
-  /* ═══ Onboarding Nav Highlight ═══ */
-  .onboarding-highlight {
-    position: relative;
-    animation: onboarding-glow 2s ease-in-out infinite;
-    border-radius: 0.75rem;
+  /* ═══ Onboarding Dim Overlay ═══ */
+  /* z-50: sits below the spotlight element (z-51) and tooltip card (z-100) */
+  .onboarding-dim-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 50;
+    pointer-events: none;
+    animation: fade-in-overlay 0.3s ease forwards;
   }
-  .onboarding-highlight::after {
+  @keyframes fade-in-overlay {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* ═══ Onboarding Spotlight & Tooltip ═══ */
+  /* z-51: lifts the highlighted element above the dim overlay */
+  .onboarding-spotlight {
+    position: relative;
+    z-index: 51;
+    border-radius: 0.75rem;
+    /* Green glow — #4ade80 */
+    box-shadow: 0 0 0 2px #4ade80,
+                0 0 0 3px rgba(74, 222, 152, 0.12),
+                0 0 16px 4px rgba(74, 222, 152, 0.25);
+    animation: spotlight-pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes spotlight-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 2px #4ade80,
+                  0 0 0 3px rgba(74, 222, 152, 0.12),
+                  0 0 12px 2px rgba(74, 222, 152, 0.18);
+    }
+    50% {
+      box-shadow: 0 0 0 2px #4ade80,
+                  0 0 0 3px rgba(74, 222, 152, 0.18),
+                  0 0 24px 6px rgba(74, 222, 152, 0.38);
+    }
+  }
+
+  /* Respect reduced-motion: keep border, drop animation */
+  @media (prefers-reduced-motion: reduce) {
+    .onboarding-spotlight {
+      animation: none;
+      box-shadow: 0 0 0 2px #4ade80;
+    }
+    .onboarding-dim-overlay {
+      animation: none;
+    }
+  }
+
+  /* Tooltip Arrows — 8px for better visual clarity */
+  .tour-tooltip-arrow-above::after {
     content: '';
     position: absolute;
-    inset: -3px;
-    border-radius: 1rem;
-    border: 1.5px solid var(--color-accent);
-    animation: onboarding-ring 2s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 10;
+    bottom: -8px;
+    left: calc(50% + var(--arrow-offset, 0px));
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid var(--color-card);
   }
-  @keyframes onboarding-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0); }
-    50%       { box-shadow: 0 0 18px 4px rgba(96, 165, 250, 0.25); }
+
+  .tour-tooltip-arrow-below::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: calc(50% + var(--arrow-offset, 0px));
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid var(--color-card);
   }
-  @keyframes onboarding-ring {
-    0%, 100% { opacity: 0.4; transform: scale(1); }
-    50%       { opacity: 1;   transform: scale(1.06); }
+
+  .tour-tooltip-arrow-right::after {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-right: 8px solid var(--color-card);
+  }
+
+  .tour-tooltip-arrow-left::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 8px solid var(--color-card);
   }
 }
 

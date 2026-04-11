@@ -15,13 +15,13 @@ export default function BalanceCard({
   const trend = totalBalance >= 0 ? 'up' : 'down'
 
   return (
-    <div className="relative overflow-hidden bg-card border border-border-subtle rounded-2xl p-5 lg:p-6">
+    <div id="dashboard-balance" className="relative overflow-hidden bg-card border border-border-subtle rounded-2xl p-5 lg:p-6">
       {/* Subtle gradient accent — top edge only */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
 
       {/* Balance */}
       <div className="mb-5">
-        <p className="overline mb-2">Monthly Balance</p>
+        <p className="overline mb-2">Total Balance</p>
         <AmountDisplay
           value={totalBalance}
           currency={currency}

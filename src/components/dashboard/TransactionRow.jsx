@@ -1,4 +1,4 @@
-import { Utensils, Bus, BookOpen, Heart, ShoppingBag, Gamepad2, Zap, HelpCircle } from 'lucide-react'
+import { Utensils, Bus, BookOpen, Heart, ShoppingBag, Gamepad2, Zap, HelpCircle, Pencil, Trash2 } from 'lucide-react'
 
 /**
  * TransactionRow — Individual transaction list item.
@@ -25,7 +25,7 @@ const CATEGORY_COLORS = {
   'Bills':         '#2DD4BF',
 }
 
-export default function TransactionRow({ transaction, currency = 'Rs', style }) {
+export default function TransactionRow({ transaction, currency = 'Rs', style, onEdit, onDelete }) {
   const { type, amount, category, description, date, note } = transaction
   const Icon = CATEGORY_ICONS[category] || HelpCircle
   const color = CATEGORY_COLORS[category] || '#5A5A6E'
@@ -71,6 +71,33 @@ export default function TransactionRow({ transaction, currency = 'Rs', style }) 
         </p>
         <p className="text-2xs text-txt-muted mt-0.5 capitalize">{category}</p>
       </div>
+
+      {(onEdit || onDelete) && (
+        <div className="flex items-center gap-1 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          {onEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit(transaction)}
+              className="p-2 rounded-lg bg-card border border-border-subtle text-txt-muted hover:text-accent hover:border-accent/30 transition-colors"
+              aria-label="Edit transaction"
+              title="Edit transaction"
+            >
+              <Pencil size={14} />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(transaction)}
+              className="p-2 rounded-lg bg-card border border-border-subtle text-txt-muted hover:text-expense hover:border-expense/30 transition-colors"
+              aria-label="Delete transaction"
+              title="Delete transaction"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

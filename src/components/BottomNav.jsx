@@ -26,7 +26,7 @@ export default function BottomNav({ highlightTarget }) {
         className={`fixed bottom-20 right-4 w-11 h-11 bg-accent rounded-full flex items-center justify-center 
                    text-txt-inverted shadow-glow-accent z-50 md:hidden 
                    hover:scale-105 active:scale-95 transition-transform duration-fast ease-out-back
-                   ${highlightTarget === 'nav-ai' ? 'onboarding-highlight' : ''}`}
+                   ${highlightTarget === 'nav-ai' ? 'onboarding-spotlight' : ''}`}
       >
         <Bot size={20} strokeWidth={2} />
       </NavLink>
@@ -51,7 +51,7 @@ export default function BottomNav({ highlightTarget }) {
                       ? 'bg-accent shadow-glow-accent scale-110'
                       : 'bg-accent shadow-md'
                     }
-                    ${highlightTarget === navId ? 'onboarding-highlight' : ''}`}
+                    ${highlightTarget === navId ? 'onboarding-spotlight' : ''}`}
                 >
                   <Icon size={22} strokeWidth={2} className="text-txt-inverted" />
                 </div>
@@ -67,7 +67,7 @@ export default function BottomNav({ highlightTarget }) {
                 `flex flex-col items-center justify-center flex-1 gap-1 relative
                  transition-colors duration-fast
                  ${isActive ? 'text-accent' : 'text-txt-muted'}
-                 ${highlightTarget === navId ? 'onboarding-highlight' : ''}`
+                 ${highlightTarget === navId ? 'onboarding-spotlight' : ''}`
               }
             >
               {({ isActive }) => (

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { 
   ArrowLeft, Mic, Utensils, Bus, BookOpen, Heart, ShoppingBag, 
   Gamepad2, Zap, Plus, Briefcase, Laptop, Gift, TrendingUp, Coins, ChevronDown, Check
@@ -29,14 +29,82 @@ const INCOME_CATEGORIES = [
   { name: 'Other Income',  icon: Coins,       color: '#A78BFA' },
 ]
 
+const ICON_MAP = {
+  Utensils,
+  Bus,
+  BookOpen,
+  Heart,
+  ShoppingBag,
+  Gamepad2,
+  Zap,
+  Plus,
+  Briefcase,
+  Laptop,
+  Gift,
+  TrendingUp,
+  Coins,
+  '🍔': Utensils,
+  '🚌': Bus,
+  '📚': BookOpen,
+  '💊': Heart,
+  '🛍': ShoppingBag,
+  '🎮': Gamepad2,
+  '💡': Zap,
+  '➕': Plus,
+  '💼': Briefcase,
+  '💻': Laptop,
+  '🎁': Gift,
+  '📈': TrendingUp,
+  '💰': Coins,
+}
+
+function getCategoryIcon(icon) {
+  return ICON_MAP[icon] || Plus
+}
+
 const TYPE_OPTIONS = [
   { value: 'expense', label: 'Expense' },
   { value: 'income', label: 'Income' },
 ]
 
+const EXPENSE_CATEGORY_ORDER = [
+  'Food',
+  'Transport',
+  'Education',
+  'Health',
+  'Shopping',
+  'Entertainment',
+  'Bills',
+]
+
+function sortExpenseCategories(list) {
+  return [...list].sort((a, b) => {
+    const aIsCustom = a.name === 'Custom'
+    const bIsCustom = b.name === 'Custom'
+
+    if (aIsCustom && !bIsCustom) return 1
+    if (!aIsCustom && bIsCustom) return -1
+
+    const aDefaultIndex = EXPENSE_CATEGORY_ORDER.indexOf(a.name)
+    const bDefaultIndex = EXPENSE_CATEGORY_ORDER.indexOf(b.name)
+    const aIsDefault = aDefaultIndex !== -1
+    const bIsDefault = bDefaultIndex !== -1
+
+    if (aIsDefault && bIsDefault) return aDefaultIndex - bDefaultIndex
+    if (aIsDefault) return -1
+    if (bIsDefault) return 1
+
+    return a.name.localeCompare(b.name)
+  })
+}
+
 export default function AddTransaction() {
+  const navigate = useNavigate()
   const { user, profile } = useAuth()
   const { categories, budgets, refetch } = useCategoriesAndBudgets(user?.id)
+  const [searchParams] = useSearchParams()
+  const editId = searchParams.get('edit')
+  const isEditMode = Boolean(editId)
 
   const [type, setType] = useState('expense')
   const [amount, setAmount] = useState('')
@@ -47,6 +115,7 @@ export default function AddTransaction() {
   const [isListening, setIsListening] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isCategorizing, setIsCategorizing] = useState(false)
+  const [isLoadingTransaction, setIsLoadingTransaction] = useState(false)
   
   // Allocation state
   const [isAllocating, setIsAllocating] = useState(false)
@@ -55,15 +124,83 @@ export default function AddTransaction() {
   const amountRef = useRef(null)
   const currency = profile?.currency || 'Rs'
 
-  const activeCategories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES
+  const expenseCategories = sortExpenseCategories(categories
+    .filter((cat) => (cat.type || 'expense') === 'expense')
+    .map((cat) => ({
+      name: cat.name,
+      icon: getCategoryIcon(cat.icon),
+      color: cat.color || '#5A5A6E',
+    })))
+
+  const incomeCategories = categories
+    .filter((cat) => cat.type === 'income')
+    .map((cat) => ({
+      name: cat.name,
+      icon: getCategoryIcon(cat.icon),
+      color: cat.color || '#5A5A6E',
+    }))
+
+  const activeCategories = type === 'income'
+    ? (incomeCategories.length > 0 ? incomeCategories : INCOME_CATEGORIES)
+    : (expenseCategories.length > 0 ? expenseCategories : EXPENSE_CATEGORIES)
 
   useEffect(() => {
-    setCategory(activeCategories[0].name)
-  }, [type])
+    if (!activeCategories.some((cat) => cat.name === category)) {
+      setCategory(activeCategories[0]?.name || '')
+    }
+  }, [activeCategories, category])
 
   useEffect(() => {
     if (amountRef.current) amountRef.current.focus()
   }, [])
+
+  useEffect(() => {
+    if (!user?.id || !editId) return
+
+    let isMounted = true
+
+    async function loadTransaction() {
+      setIsLoadingTransaction(true)
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('id', editId)
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (error) throw error
+        if (!data) {
+          CustomToast.error('Transaction not found', 'We could not load the transaction you wanted to edit.')
+          navigate('/')
+          return
+        }
+
+        if (!isMounted) return
+
+        setType(data.type)
+        setAmount(String(data.amount))
+        setCategory(data.category)
+        setDescription(data.description || '')
+        setNote(data.note || '')
+        setDate(data.date)
+        setIsAllocating(false)
+        setAllocations({})
+      } catch (err) {
+        console.error(err)
+        CustomToast.error('Could not load transaction', err.message || 'Please try again.')
+        navigate('/')
+      } finally {
+        if (isMounted) setIsLoadingTransaction(false)
+      }
+    }
+
+    loadTransaction()
+
+    return () => {
+      isMounted = false
+    }
+  }, [editId, navigate, user?.id])
 
   // Voice Input
   const startVoiceInput = () => {
@@ -121,7 +258,7 @@ export default function AddTransaction() {
       const suggestedCategory = await categorizeTransaction(description)
       if (suggestedCategory && suggestedCategory !== 'Other') {
         // Check if it's a valid category in our list
-        const exists = EXPENSE_CATEGORIES.some(c => c.name === suggestedCategory)
+        const exists = activeCategories.some(c => c.name === suggestedCategory)
         if (exists) {
           setCategory(suggestedCategory)
           CustomToast.info('Auto-Categorized', `AI suggested "${suggestedCategory}" for this transaction.`, { duration: 2000 })
@@ -143,7 +280,7 @@ export default function AddTransaction() {
       return CustomToast.error('Description Required', 'Please enter a description for this transaction.')
     }
 
-    if (type === 'income' && isAllocating) {
+    if (!isEditMode && type === 'income' && isAllocating) {
       const totalAllocated = Object.values(allocations).reduce((sum, val) => sum + (Number(val) || 0), 0)
       if (totalAllocated > Number(amount)) {
         return CustomToast.error('Over Allocation', 'Total allocation cannot exceed the income amount.')
@@ -153,13 +290,15 @@ export default function AddTransaction() {
     setLoading(true)
     try {
       // 1. Save Transaction
-      const { error: txError } = await supabase.from('transactions').insert([
-        { user_id: user.id, type, amount: Number(amount), category, description, note, date }
-      ])
+      const payload = { user_id: user.id, type, amount: Number(amount), category, description, note, date }
+      const txQuery = isEditMode
+        ? supabase.from('transactions').update(payload).eq('id', editId).eq('user_id', user.id)
+        : supabase.from('transactions').insert([payload])
+      const { error: txError } = await txQuery
       if (txError) throw txError
 
       // 2. Handle Allocations (Budgets)
-      if (type === 'income' && isAllocating) {
+      if (!isEditMode && type === 'income' && isAllocating) {
         const currentMonth = new Date().getMonth() + 1
         const currentYear = new Date().getFullYear()
 
@@ -193,7 +332,10 @@ export default function AddTransaction() {
         refetch()
       }
 
-      CustomToast.success('Transaction Saved', 'Your transaction has been recorded successfully.')
+      CustomToast.success(
+        isEditMode ? 'Transaction updated' : 'Transaction Saved',
+        isEditMode ? 'Your balance has been recalculated instantly.' : 'Your transaction has been recorded successfully.'
+      )
       navigate('/')
     } catch (err) {
       console.error(err)
@@ -236,8 +378,15 @@ export default function AddTransaction() {
         >
           <ArrowLeft size={16} />
         </button>
-        <h1 className="text-xl font-bold tracking-tight text-txt-bright">Add New</h1>
+        <h1 className="text-xl font-bold tracking-tight text-txt-bright">{isEditMode ? 'Edit Transaction' : 'Add New'}</h1>
       </div>
+
+      {isEditMode && (
+        <div className="mb-6 rounded-2xl border border-accent/20 bg-accent/5 px-4 py-3">
+          <p className="text-sm font-semibold text-txt-primary">Editing an existing transaction</p>
+          <p className="text-xs text-txt-muted mt-1">Saving will reverse the old amount and apply the updated one to your balance automatically.</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
 
@@ -259,7 +408,7 @@ export default function AddTransaction() {
         </div>
 
         {/* Hero Amount */}
-        <div className="text-center mb-10">
+        <div id="add-record-hero" className="text-center mb-10">
           <p className="overline mb-3">Amount</p>
           <div className="flex justify-center items-baseline">
             <span className="text-4xl font-bold text-txt-muted mr-2 font-mono">{currency}</span>
@@ -328,7 +477,7 @@ export default function AddTransaction() {
         </div>
 
         {/* Allocation System */}
-        {type === 'income' && Number(amount) > 0 && (
+        {!isEditMode && type === 'income' && Number(amount) > 0 && (
           <div className="mb-8 bg-card border border-border-subtle rounded-2xl p-5 animate-fade-in shadow-xl shadow-canvas/50">
             <div className="flex items-center justify-between mb-5">
               <div>
@@ -348,7 +497,7 @@ export default function AddTransaction() {
             {isAllocating && (
               <div className="space-y-4 animate-scale-in origin-top">
                 <div className="grid grid-cols-1 gap-3">
-                  {EXPENSE_CATEGORIES.filter(c => c.name !== 'Custom').map(cat => (
+                  {expenseCategories.map(cat => (
                     <div key={cat.name} className="flex items-center gap-3 bg-interactive/20 p-3 rounded-xl border border-border-subtle/30 group hover:border-accent/30 transition-colors">
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
                            style={{ backgroundColor: `${cat.color}15` }}>
@@ -451,11 +600,11 @@ export default function AddTransaction() {
           <button
             type="submit"
             className="flex-[2] btn-primary h-14 flex items-center justify-center text-sm font-bold shadow-xl shadow-accent/20 active:scale-[0.98] transition-transform"
-            disabled={loading}
+            disabled={loading || isLoadingTransaction}
           >
             {loading
               ? <div className="w-6 h-6 border-3 border-canvas/20 border-t-canvas rounded-full animate-spin" />
-              : `Save ${type === 'income' ? 'Income' : 'Expense'}`}
+              : (isEditMode ? 'Save Changes' : `Save ${type === 'income' ? 'Income' : 'Expense'}`)}
           </button>
         </div>
       </form>

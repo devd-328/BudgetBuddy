@@ -79,21 +79,30 @@ export default function Categories() {
     e.preventDefault()
     if (!catName) return CustomToast.error('Category name needed', 'Please provide a name for your category.')
 
+    const trimmedName = catName.trim()
+    const duplicate = categories.find((cat) =>
+      cat.id !== selectedCat?.id && cat.name.trim().toLowerCase() === trimmedName.toLowerCase()
+    )
+
+    if (duplicate) {
+      return CustomToast.error('Category already exists', `"${trimmedName}" is already in your categories.`)
+    }
+
     setCatFormLoading(true)
     try {
       if (selectedCat) {
         const { error } = await supabase
           .from('categories')
-          .update({ name: catName, icon: catIcon, color: catColor })
+          .update({ name: trimmedName, icon: catIcon, color: catColor })
           .eq('id', selectedCat.id)
         if (error) throw error
-        CustomToast.success('Category updated', `Successfully saved changes to "${catName}".`)
+        CustomToast.success('Category updated', `Successfully saved changes to "${trimmedName}".`)
       } else {
         const { error } = await supabase
           .from('categories')
-          .insert([{ user_id: user.id, name: catName, icon: catIcon, color: catColor, budget_limit: 0 }])
+          .insert([{ user_id: user.id, name: trimmedName, icon: catIcon, color: catColor, type: 'expense', budget_limit: 0 }])
         if (error) throw error
-        CustomToast.success('Category created', `New category "${catName}" is ready for use.`)
+        CustomToast.success('Category created', `New category "${trimmedName}" is ready for use.`)
       }
       setActiveView('list')
       refetch()

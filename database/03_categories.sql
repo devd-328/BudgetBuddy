@@ -7,8 +7,12 @@ CREATE TABLE categories (
   name TEXT NOT NULL,
   icon TEXT NOT NULL,
   color TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'expense' CHECK (type IN ('income', 'expense')),
   budget_limit DECIMAL(12, 2)
 );
+
+CREATE UNIQUE INDEX unique_category_name_per_user_and_type
+ON categories (user_id, lower(name), type);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;

@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext'
 import { generateMonthlySummary } from '../lib/groq'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { usePWAInstall } from '../hooks/usePWAInstall'
+import { supabase } from '../lib/supabase'
+import CustomToast from '../components/ui/CustomToast'
 import { Download, Laptop, Smartphone } from 'lucide-react'
 
 import BalanceCard from '../components/dashboard/BalanceCard'
@@ -58,7 +60,7 @@ export default function Dashboard() {
     }
   }
 
-  const { data, loading, error } = useDashboardData(user?.id)
+  const { data, loading, error, refetch } = useDashboardData(user?.id)
 
   useEffect(() => {
     console.log('[DEBUG] Dashboard State:', { hasUser: !!user, hasProfile: !!profile, loading, error, hasData: !!data });
@@ -66,6 +68,32 @@ export default function Dashboard() {
 
   const currency = profile?.currency || 'Rs'
   const displayName = profile?.name || user?.user_metadata?.full_name || user?.user_metadata?.name || 'User'
+
+  const handleEditTransaction = (transaction) => {
+    navigate(`/add?edit=${transaction.id}`)
+  }
+
+  const handleDeleteTransaction = (transaction) => {
+    CustomToast.confirm(
+      'Delete transaction?',
+      `This will remove "${transaction.description}" and recalculate your balance immediately.`,
+      async () => {
+        const { error: deleteError } = await supabase
+          .from('transactions')
+          .delete()
+          .eq('id', transaction.id)
+          .eq('user_id', user.id)
+
+        if (deleteError) {
+          CustomToast.error('Delete failed', deleteError.message || 'Could not remove the transaction.')
+          return
+        }
+
+        CustomToast.success('Transaction deleted', 'Your balance has been updated.')
+        refetch()
+      }
+    )
+  }
 
   // Determine greeting: "Welcome" for new users (created today), "Welcome back" for returning
   let greeting = 'Welcome'
@@ -375,6 +403,8 @@ export default function Dashboard() {
                     key={tx.id}
                     transaction={tx}
                     currency={currency}
+                    onEdit={handleEditTransaction}
+                    onDelete={handleDeleteTransaction}
                   />
                 ))}
               </div>

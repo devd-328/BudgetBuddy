@@ -21,6 +21,26 @@ const DEFAULT_CATEGORIES = [
   { name: 'Other Income', icon: '💰', color: '#A78BFA', type: 'income' },
 ]
 
+function normalizeCategory(cat) {
+  return {
+    ...cat,
+    type: cat.type || 'expense',
+  }
+}
+
+function dedupeCategories(list) {
+  const seen = new Set()
+
+  return (list || []).filter((rawCat) => {
+    const cat = normalizeCategory(rawCat)
+    const key = `${cat.type}:${cat.name.trim().toLowerCase()}`
+
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  }).map(normalizeCategory)
+}
+
 export function useCategoriesAndBudgets(userId) {
   const [categories, setCategories] = useState([])
   const [budgets, setBudgets] = useState([])
@@ -62,7 +82,9 @@ export function useCategoriesAndBudgets(userId) {
         toast.success('Generated default categories.')
       }
 
-      setCategories(cats || [])
+      const normalizedCats = dedupeCategories(cats || [])
+
+      setCategories(normalizedCats)
 
       // 2. Fetch Budgets for current month
       const currentMonth = new Date().getMonth() + 1
@@ -95,7 +117,7 @@ export function useCategoriesAndBudgets(userId) {
          if (tx.type === 'income') {
             totalIncomeVal += Number(tx.amount)
          } else if (tx.type === 'expense') {
-            const matchingCat = cats.find(c => c.name === tx.category && c.type !== 'income')
+            const matchingCat = normalizedCats.find(c => c.name === tx.category && c.type !== 'income')
             if (matchingCat) {
                mappedSpends[matchingCat.id] = (mappedSpends[matchingCat.id] || 0) + Number(tx.amount)
             }

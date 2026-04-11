@@ -162,7 +162,7 @@ export default function Borrow() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
+      <div id="borrow-summary" className="grid grid-cols-2 gap-4 mb-8">
         <Card padding="compact" className="bg-card/40 border-border-subtle shadow-xl shadow-canvas/30 backdrop-blur-sm">
           <div className="flex items-center gap-2 mb-2 px-1">
             <div className="w-6 h-6 rounded-lg bg-income/10 flex items-center justify-center">
