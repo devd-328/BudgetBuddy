@@ -7,7 +7,7 @@ import {
   isReservedCustomCategoryName,
 } from '../lib/categories'
 
-export function useCategoriesAndBudgets(userId) {
+export function useCategoriesAndBudgetsFixed(userId) {
   const [categories, setCategories] = useState([])
   const [budgets, setBudgets] = useState([])
   const [spentMap, setSpentMap] = useState({})
@@ -18,7 +18,6 @@ export function useCategoriesAndBudgets(userId) {
 
     setLoading(true)
     try {
-      // 1. Fetch categories
       let { data: cats, error: catsErr } = await supabase
         .from('categories')
         .select('*')
@@ -27,14 +26,13 @@ export function useCategoriesAndBudgets(userId) {
 
       if (catsErr) throw catsErr
 
-      // 2. Auto-seed defaults if nothing exists yet
       if (!cats || cats.length === 0) {
-        const seedData = DEFAULT_CATEGORIES.map((c) => ({
+        const seedData = DEFAULT_CATEGORIES.map((category) => ({
           user_id: userId,
-          name: c.name,
-          icon: c.icon,
-          color: c.color,
-          type: c.type || 'expense',
+          name: category.name,
+          icon: category.icon,
+          color: category.color,
+          type: category.type || 'expense',
           budget_limit: 0,
         }))
 
@@ -48,26 +46,12 @@ export function useCategoriesAndBudgets(userId) {
         toast.success('Generated default categories.')
       }
 
-      // 3. Strip any row named "Custom" that was accidentally saved to DB
-      //    (legacy data cleanup — harmless if nothing matches)
-      const reservedRows = (cats || []).filter((c) =>
-        isReservedCustomCategoryName(c.name)
+      const normalizedCats = dedupeCategories(cats || []).filter(
+        (category) => !isReservedCustomCategoryName(category.name)
       )
-      if (reservedRows.length > 0) {
-        const reservedIds = reservedRows.map((c) => c.id)
-        await supabase
-          .from('categories')
-          .delete()
-          .in('id', reservedIds)
-          .eq('user_id', userId)
 
-        cats = (cats || []).filter((c) => !reservedIds.includes(c.id))
-      }
-
-      const normalizedCats = dedupeCategories(cats || [])
       setCategories(normalizedCats)
 
-      // 4. Fetch budgets for the current month
       const currentMonth = new Date().getMonth() + 1
       const currentYear = new Date().getFullYear()
 
@@ -81,11 +65,7 @@ export function useCategoriesAndBudgets(userId) {
       if (budsErr) throw budsErr
       setBudgets(buds || [])
 
-      // 5. Calculate spending per category
-      const startOfMonth = new Date(currentYear, currentMonth - 1, 1)
-        .toISOString()
-        .split('T')[0]
-
+      const startOfMonth = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0]
       const { data: txs, error: txsErr } = await supabase
         .from('transactions')
         .select('category, amount, type')
@@ -95,14 +75,14 @@ export function useCategoriesAndBudgets(userId) {
       if (txsErr) throw txsErr
 
       const mappedSpends = {}
+
       txs?.forEach((tx) => {
         if (tx.type === 'expense') {
           const matchingCat = normalizedCats.find(
-            (c) => c.name === tx.category && c.type !== 'income'
+            (category) => category.name === tx.category && category.type !== 'income'
           )
           if (matchingCat) {
-            mappedSpends[matchingCat.id] =
-              (mappedSpends[matchingCat.id] || 0) + Number(tx.amount)
+            mappedSpends[matchingCat.id] = (mappedSpends[matchingCat.id] || 0) + Number(tx.amount)
           }
         }
       })

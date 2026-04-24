@@ -1,32 +1,36 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { 
-  ArrowLeft, Mic, Utensils, Bus, BookOpen, Heart, ShoppingBag, 
-  Gamepad2, Zap, Plus, Briefcase, Laptop, Gift, TrendingUp, Coins, ChevronDown, Check
+import {
+  ArrowLeft, Mic, Utensils, Bus, BookOpen, Heart, ShoppingBag,
+  Gamepad2, Zap, Plus, Briefcase, Laptop, Gift, TrendingUp, Coins, Check,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { useCategoriesAndBudgets } from '../hooks/useCategoriesAndBudgets'
+import { useCategoriesAndBudgetsFixed } from '../hooks/useCategoriesAndBudgetsFixed'
 import { supabase } from '../lib/supabase'
 import { categorizeTransaction } from '../lib/groq'
 import CustomToast from '../components/ui/CustomToast'
+import CategoryPromptModal from '../components/ui/CategoryPromptModal'
+import {
+  RESERVED_CUSTOM_CATEGORY_NAME,
+  sortExpenseCategories,
+} from '../lib/categories'
 
 const EXPENSE_CATEGORIES = [
-  { name: 'Food',          icon: Utensils,    color: '#34D399' },
-  { name: 'Transport',     icon: Bus,         color: '#60A5FA' },
-  { name: 'Education',     icon: BookOpen,    color: '#FB923C' },
-  { name: 'Health',        icon: Heart,       color: '#FB7185' },
-  { name: 'Shopping',      icon: ShoppingBag, color: '#FBBF24' },
-  { name: 'Entertainment', icon: Gamepad2,    color: '#A78BFA' },
-  { name: 'Bills',         icon: Zap,         color: '#2DD4BF' },
-  { name: 'Custom',        icon: Plus,        color: '#5A5A6E' },
+  { name: 'Food', icon: Utensils, color: '#34D399' },
+  { name: 'Transport', icon: Bus, color: '#60A5FA' },
+  { name: 'Education', icon: BookOpen, color: '#FB923C' },
+  { name: 'Health', icon: Heart, color: '#FB7185' },
+  { name: 'Shopping', icon: ShoppingBag, color: '#FBBF24' },
+  { name: 'Entertainment', icon: Gamepad2, color: '#A78BFA' },
+  { name: 'Bills', icon: Zap, color: '#2DD4BF' },
 ]
 
 const INCOME_CATEGORIES = [
-  { name: 'Salary',        icon: Briefcase,   color: '#34D399' },
-  { name: 'Freelance',     icon: Laptop,      color: '#60A5FA' },
-  { name: 'Gift',          icon: Gift,        color: '#FBBF24' },
-  { name: 'Business',      icon: TrendingUp,  color: '#818CF8' },
-  { name: 'Other Income',  icon: Coins,       color: '#A78BFA' },
+  { name: 'Salary', icon: Briefcase, color: '#34D399' },
+  { name: 'Freelance', icon: Laptop, color: '#60A5FA' },
+  { name: 'Gift', icon: Gift, color: '#FBBF24' },
+  { name: 'Business', icon: TrendingUp, color: '#818CF8' },
+  { name: 'Other Income', icon: Coins, color: '#A78BFA' },
 ]
 
 const ICON_MAP = {
@@ -43,23 +47,23 @@ const ICON_MAP = {
   Gift,
   TrendingUp,
   Coins,
-  '🍔': Utensils,
-  '🚌': Bus,
-  '📚': BookOpen,
-  '💊': Heart,
-  '🛍': ShoppingBag,
-  '🎮': Gamepad2,
-  '💡': Zap,
-  '➕': Plus,
-  '💼': Briefcase,
-  '💻': Laptop,
-  '🎁': Gift,
-  '📈': TrendingUp,
-  '💰': Coins,
+  '??': Utensils,
+  '??': Bus,
+  '??': BookOpen,
+  '??': Heart,
+  '??': ShoppingBag,
+  '??': Gamepad2,
+  '??': Zap,
+  '?': Plus,
+  '??': Briefcase,
+  '??': Laptop,
+  '??': Gift,
+  '??': TrendingUp,
+  '??': Coins,
 }
 
 function getCategoryIcon(icon) {
-  return ICON_MAP[icon] || Plus
+  return ICON_MAP[icon] || ICON_MAP[icon?.trim?.()] || Plus
 }
 
 const TYPE_OPTIONS = [
@@ -67,41 +71,10 @@ const TYPE_OPTIONS = [
   { value: 'income', label: 'Income' },
 ]
 
-const EXPENSE_CATEGORY_ORDER = [
-  'Food',
-  'Transport',
-  'Education',
-  'Health',
-  'Shopping',
-  'Entertainment',
-  'Bills',
-]
-
-function sortExpenseCategories(list) {
-  return [...list].sort((a, b) => {
-    const aIsCustom = a.name === 'Custom'
-    const bIsCustom = b.name === 'Custom'
-
-    if (aIsCustom && !bIsCustom) return 1
-    if (!aIsCustom && bIsCustom) return -1
-
-    const aDefaultIndex = EXPENSE_CATEGORY_ORDER.indexOf(a.name)
-    const bDefaultIndex = EXPENSE_CATEGORY_ORDER.indexOf(b.name)
-    const aIsDefault = aDefaultIndex !== -1
-    const bIsDefault = bDefaultIndex !== -1
-
-    if (aIsDefault && bIsDefault) return aDefaultIndex - bDefaultIndex
-    if (aIsDefault) return -1
-    if (bIsDefault) return 1
-
-    return a.name.localeCompare(b.name)
-  })
-}
-
 export default function AddTransaction() {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
-  const { categories, budgets, refetch } = useCategoriesAndBudgets(user?.id)
+  const { categories, budgets, refetch } = useCategoriesAndBudgetsFixed(user?.id)
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('edit')
   const isEditMode = Boolean(editId)
@@ -116,36 +89,45 @@ export default function AddTransaction() {
   const [loading, setLoading] = useState(false)
   const [isCategorizing, setIsCategorizing] = useState(false)
   const [isLoadingTransaction, setIsLoadingTransaction] = useState(false)
-  
-  // Allocation state
   const [isAllocating, setIsAllocating] = useState(false)
-  const [allocations, setAllocations] = useState({}) // categoryName -> amount
+  const [allocations, setAllocations] = useState({})
+  const [showCategoryPrompt, setShowCategoryPrompt] = useState(false)
+  const [isSavingCategory, setIsSavingCategory] = useState(false)
 
   const amountRef = useRef(null)
   const currency = profile?.currency || 'Rs'
 
-  const expenseCategories = sortExpenseCategories(categories
-    .filter((cat) => (cat.type || 'expense') === 'expense')
-    .map((cat) => ({
-      name: cat.name,
-      icon: getCategoryIcon(cat.icon),
-      color: cat.color || '#5A5A6E',
-    })))
+  const expenseCategories = sortExpenseCategories(
+    categories
+      .filter((item) => (item.type || 'expense') === 'expense')
+      .map((item) => ({
+        name: item.name,
+        icon: getCategoryIcon(item.icon),
+        color: item.color || '#5A5A6E',
+      }))
+  )
 
   const incomeCategories = categories
-    .filter((cat) => cat.type === 'income')
-    .map((cat) => ({
-      name: cat.name,
-      icon: getCategoryIcon(cat.icon),
-      color: cat.color || '#5A5A6E',
+    .filter((item) => item.type === 'income')
+    .map((item) => ({
+      name: item.name,
+      icon: getCategoryIcon(item.icon),
+      color: item.color || '#5A5A6E',
     }))
 
   const activeCategories = type === 'income'
     ? (incomeCategories.length > 0 ? incomeCategories : INCOME_CATEGORIES)
     : (expenseCategories.length > 0 ? expenseCategories : EXPENSE_CATEGORIES)
 
+  const visibleCategoryOptions = type === 'expense'
+    ? [
+        ...activeCategories,
+        { name: RESERVED_CUSTOM_CATEGORY_NAME, icon: Plus, color: '#5A5A6E', isCustomAction: true },
+      ]
+    : activeCategories
+
   useEffect(() => {
-    if (!activeCategories.some((cat) => cat.name === category)) {
+    if (!activeCategories.some((item) => item.name === category)) {
       setCategory(activeCategories[0]?.name || '')
     }
   }, [activeCategories, category])
@@ -202,7 +184,6 @@ export default function AddTransaction() {
     }
   }, [editId, navigate, user?.id])
 
-  // Voice Input
   const startVoiceInput = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
@@ -236,7 +217,7 @@ export default function AddTransaction() {
         CustomToast.success('Input Parsed', `Added ${parsedDesc || 'transaction'} for ${currency}${parsedAmount}`)
       } else {
         setDescription(transcript.charAt(0).toUpperCase() + transcript.slice(1))
-        CustomToast.warning('Amount Missing', 'We caught the description but couldn\'t find a number.')
+        CustomToast.warning('Amount Missing', 'We caught the description but could not find a number.')
       }
     }
 
@@ -250,18 +231,18 @@ export default function AddTransaction() {
     recognition.onend = () => setIsListening(false)
     recognition.start()
   }
+
   const handleAutoCategorize = async () => {
     if (type !== 'expense' || !description.trim() || description.length < 3) return
-    
+
     setIsCategorizing(true)
     try {
       const suggestedCategory = await categorizeTransaction(description)
       if (suggestedCategory && suggestedCategory !== 'Other') {
-        // Check if it's a valid category in our list
-        const exists = activeCategories.some(c => c.name === suggestedCategory)
+        const exists = activeCategories.some((item) => item.name === suggestedCategory)
         if (exists) {
           setCategory(suggestedCategory)
-          CustomToast.info('Auto-Categorized', `AI suggested "${suggestedCategory}" for this transaction.`, { duration: 2000 })
+          CustomToast.info('Auto-Categorized', `AI suggested "${suggestedCategory}" for this transaction.`)
         }
       }
     } catch (err) {
@@ -271,8 +252,56 @@ export default function AddTransaction() {
     }
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleCreateCustomCategory = async (rawName) => {
+    const trimmedName = rawName.trim()
+
+    if (!trimmedName) {
+      return CustomToast.error('Category name needed', 'Please enter a name for your new category.')
+    }
+
+    if (trimmedName.toLowerCase() === RESERVED_CUSTOM_CATEGORY_NAME.toLowerCase()) {
+      return CustomToast.error('Choose another name', '"Custom" is reserved for adding new categories.')
+    }
+
+    const duplicate = categories.find(
+      (item) => (item.type || 'expense') === 'expense' && item.name.trim().toLowerCase() === trimmedName.toLowerCase()
+    )
+
+    if (duplicate) {
+      setShowCategoryPrompt(false)
+      setCategory(duplicate.name)
+      return CustomToast.info('Category already exists', `"${duplicate.name}" is already available and has been selected.`)
+    }
+
+    setIsSavingCategory(true)
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .insert([{
+          user_id: user.id,
+          name: trimmedName,
+          icon: 'Plus',
+          color: '#8A8A9E',
+          type: 'expense',
+          budget_limit: 0,
+        }])
+
+      if (error) throw error
+
+      await refetch()
+      setCategory(trimmedName)
+      setShowCategoryPrompt(false)
+      CustomToast.success('Category created', `"${trimmedName}" has been added to your categories.`)
+    } catch (err) {
+      console.error(err)
+      CustomToast.error('Save Failed', err.message || 'We could not create that category.')
+    } finally {
+      setIsSavingCategory(false)
+    }
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
     if (!amount || Number(amount) <= 0) {
       return CustomToast.error('Invalid Amount', 'Please enter a valid amount greater than zero.')
     }
@@ -281,7 +310,7 @@ export default function AddTransaction() {
     }
 
     if (!isEditMode && type === 'income' && isAllocating) {
-      const totalAllocated = Object.values(allocations).reduce((sum, val) => sum + (Number(val) || 0), 0)
+      const totalAllocated = Object.values(allocations).reduce((sum, value) => sum + (Number(value) || 0), 0)
       if (totalAllocated > Number(amount)) {
         return CustomToast.error('Over Allocation', 'Total allocation cannot exceed the income amount.')
       }
@@ -289,7 +318,6 @@ export default function AddTransaction() {
 
     setLoading(true)
     try {
-      // 1. Save Transaction
       const payload = { user_id: user.id, type, amount: Number(amount), category, description, note, date }
       const txQuery = isEditMode
         ? supabase.from('transactions').update(payload).eq('id', editId).eq('user_id', user.id)
@@ -297,7 +325,6 @@ export default function AddTransaction() {
       const { error: txError } = await txQuery
       if (txError) throw txError
 
-      // 2. Handle Allocations (Budgets)
       if (!isEditMode && type === 'income' && isAllocating) {
         const currentMonth = new Date().getMonth() + 1
         const currentYear = new Date().getFullYear()
@@ -305,31 +332,31 @@ export default function AddTransaction() {
         const allocationPromises = Object.entries(allocations).map(async ([catName, allocAmount]) => {
           if (Number(allocAmount) <= 0) return
 
-          const cat = categories.find(c => c.name === catName)
-          if (!cat) return
+          const foundCategory = categories.find((item) => item.name === catName)
+          if (!foundCategory) return
 
-          const existingBudget = budgets.find(b => b.category_id === cat.id)
-          
+          const existingBudget = budgets.find((budget) => budget.category_id === foundCategory.id)
+
           if (existingBudget) {
             return supabase
               .from('budgets')
               .update({ limit_amount: Number(existingBudget.limit_amount) + Number(allocAmount) })
               .eq('id', existingBudget.id)
-          } else {
-            return supabase
-              .from('budgets')
-              .insert([{ 
-                user_id: user.id, 
-                category_id: cat.id, 
-                limit_amount: Number(allocAmount),
-                month: currentMonth,
-                year: currentYear
-              }])
           }
+
+          return supabase
+            .from('budgets')
+            .insert([{
+              user_id: user.id,
+              category_id: foundCategory.id,
+              limit_amount: Number(allocAmount),
+              month: currentMonth,
+              year: currentYear,
+            }])
         })
 
         await Promise.all(allocationPromises)
-        refetch()
+        await refetch()
       }
 
       CustomToast.success(
@@ -368,11 +395,10 @@ export default function AddTransaction() {
 
   return (
     <div className="page-enter pb-24">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 rounded-xl bg-interactive border border-border-subtle 
+          className="p-2 rounded-xl bg-interactive border border-border-subtle
                      hover:bg-elevated hover:border-border transition-[background,border-color] duration-fast
                      text-txt-muted hover:text-txt-primary"
         >
@@ -389,25 +415,22 @@ export default function AddTransaction() {
       )}
 
       <form onSubmit={handleSubmit}>
-
-        {/* Type Toggle */}
         <div className="flex bg-interactive/50 p-1 rounded-2xl border border-border-subtle mb-8">
-          {TYPE_OPTIONS.map((opt) => (
+          {TYPE_OPTIONS.map((option) => (
             <button
-              key={opt.value}
+              key={option.value}
               type="button"
-              onClick={() => setType(opt.value)}
+              onClick={() => setType(option.value)}
               className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300
-                ${type === opt.value 
-                  ? 'bg-card text-txt-primary shadow-glow-accent border border-accent/20' 
+                ${type === option.value
+                  ? 'bg-card text-txt-primary shadow-glow-accent border border-accent/20'
                   : 'text-txt-muted hover:text-txt-secondary'}`}
             >
-              {opt.label}
+              {option.label}
             </button>
           ))}
         </div>
 
-        {/* Hero Amount */}
         <div id="add-record-hero" className="text-center mb-10">
           <p className="overline mb-3">Amount</p>
           <div className="flex justify-center items-baseline">
@@ -417,18 +440,16 @@ export default function AddTransaction() {
               type="number"
               step="0.01"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="bg-transparent text-5xl font-black text-txt-bright font-mono tracking-tighter 
+              onChange={(event) => setAmount(event.target.value)}
+              className="bg-transparent text-5xl font-black text-txt-bright font-mono tracking-tighter
                          outline-none w-48 text-left placeholder:text-txt-muted/20"
               placeholder="0"
               required
             />
           </div>
-          {/* Subtle accent line under amount */}
           <div className={`mx-auto mt-4 h-1 w-24 rounded-full ${type === 'expense' ? 'bg-expense/40 shadow-glow-expense' : 'bg-income/40 shadow-glow-income'}`} />
         </div>
 
-        {/* Categories */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
             <p className="overline text-txt-muted">{type === 'income' ? 'Income Source' : 'Category'}</p>
@@ -440,15 +461,21 @@ export default function AddTransaction() {
             )}
           </div>
           <div className="flex overflow-x-auto pb-4 gap-3 scrollbar-hide snap-x">
-            {activeCategories.map(cat => {
-              const Icon = cat.icon
-              const isSelected = category === cat.name
+            {visibleCategoryOptions.map((item) => {
+              const Icon = item.icon
+              const isSelected = !item.isCustomAction && category === item.name
 
               return (
                 <button
-                  key={cat.name}
+                  key={item.name}
                   type="button"
-                  onClick={() => setCategory(cat.name)}
+                  onClick={() => {
+                    if (item.isCustomAction) {
+                      setShowCategoryPrompt(true)
+                      return
+                    }
+                    setCategory(item.name)
+                  }}
                   className={`snap-start shrink-0 flex flex-col items-center gap-2 p-3.5 rounded-2xl border w-[80px]
                     transition-all duration-300 ease-out-expo
                     ${isSelected
@@ -459,16 +486,15 @@ export default function AddTransaction() {
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center
                       transition-all duration-300 ${isSelected ? 'scale-110 rotate-3 shadow-lg' : ''}`}
-                    style={{ 
-                      backgroundColor: isSelected ? `${cat.color}25` : `${cat.color}10`,
-                      boxShadow: isSelected ? `0 0 15px ${cat.color}30` : 'none'
+                    style={{
+                      backgroundColor: isSelected ? `${item.color}25` : `${item.color}10`,
+                      boxShadow: isSelected ? `0 0 15px ${item.color}30` : 'none',
                     }}
                   >
-                    <Icon size={18} style={{ color: cat.color }} strokeWidth={isSelected ? 2.5 : 1.5} />
+                    <Icon size={18} style={{ color: item.color }} strokeWidth={isSelected ? 2.5 : 1.5} />
                   </div>
-                  <span className={`text-[10px] truncate w-full text-center font-bold tracking-tight
-                    ${isSelected ? 'text-txt-primary' : 'text-txt-muted'}`}>
-                    {cat.name}
+                  <span className={`text-[10px] truncate w-full text-center font-bold tracking-tight ${isSelected ? 'text-txt-primary' : 'text-txt-muted'}`}>
+                    {item.name}
                   </span>
                 </button>
               )
@@ -476,7 +502,6 @@ export default function AddTransaction() {
           </div>
         </div>
 
-        {/* Allocation System */}
         {!isEditMode && type === 'income' && Number(amount) > 0 && (
           <div className="mb-8 bg-card border border-border-subtle rounded-2xl p-5 animate-fade-in shadow-xl shadow-canvas/50">
             <div className="flex items-center justify-between mb-5">
@@ -497,38 +522,37 @@ export default function AddTransaction() {
             {isAllocating && (
               <div className="space-y-4 animate-scale-in origin-top">
                 <div className="grid grid-cols-1 gap-3">
-                  {expenseCategories.map(cat => (
-                    <div key={cat.name} className="flex items-center gap-3 bg-interactive/20 p-3 rounded-xl border border-border-subtle/30 group hover:border-accent/30 transition-colors">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
-                           style={{ backgroundColor: `${cat.color}15` }}>
-                        <cat.icon size={16} style={{ color: cat.color }} />
+                  {expenseCategories.map((item) => (
+                    <div key={item.name} className="flex items-center gap-3 bg-interactive/20 p-3 rounded-xl border border-border-subtle/30 group hover:border-accent/30 transition-colors">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: `${item.color}15` }}>
+                        <item.icon size={16} style={{ color: item.color }} />
                       </div>
-                      <span className="text-xs font-bold text-txt-secondary flex-1">{cat.name}</span>
+                      <span className="text-xs font-bold text-txt-secondary flex-1">{item.name}</span>
                       <div className="relative w-32">
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-txt-muted text-2xs font-bold font-mono">{currency}</span>
                         <input
                           type="number"
                           placeholder="0"
-                          value={allocations[cat.name] || ''}
-                          onChange={(e) => setAllocations({ ...allocations, [cat.name]: e.target.value })}
+                          value={allocations[item.name] || ''}
+                          onChange={(event) => setAllocations({ ...allocations, [item.name]: event.target.value })}
                           className="w-full bg-canvas border border-border-subtle rounded-lg py-2 pl-8 pr-2 text-xs font-bold font-mono text-right outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
                         />
                       </div>
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="pt-4 border-t border-border-subtle flex justify-between items-center">
                   <span className="text-2xs font-bold text-txt-muted uppercase tracking-[0.1em]">Remaining to Assign</span>
                   <div className="flex flex-col items-end">
                     <span className={`font-mono text-base font-black ${
-                      (Number(amount) - Object.values(allocations).reduce((s,v) => s + (Number(v)||0), 0)) < 0 
-                      ? 'text-expense' 
-                      : 'text-income'
+                      (Number(amount) - Object.values(allocations).reduce((sum, value) => sum + (Number(value) || 0), 0)) < 0
+                        ? 'text-expense'
+                        : 'text-income'
                     }`}>
-                      {currency}{(Number(amount) - Object.values(allocations).reduce((s,v) => s + (Number(v)||0), 0)).toLocaleString()}
+                      {currency}{(Number(amount) - Object.values(allocations).reduce((sum, value) => sum + (Number(value) || 0), 0)).toLocaleString()}
                     </span>
-                    {(Number(amount) - Object.values(allocations).reduce((s,v) => s + (Number(v)||0), 0)) < 0 && (
+                    {(Number(amount) - Object.values(allocations).reduce((sum, value) => sum + (Number(value) || 0), 0)) < 0 && (
                       <span className="text-[10px] text-expense font-bold animate-pulse">Exceeds Income!</span>
                     )}
                   </div>
@@ -538,14 +562,13 @@ export default function AddTransaction() {
           </div>
         )}
 
-        {/* Form Fields */}
         <div className="space-y-4 mb-10">
           <div className="relative group">
             <input
               type="text"
               placeholder="Description (e.g. Lunch with friends)"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(event) => setDescription(event.target.value)}
               onBlur={handleAutoCategorize}
               className="input-field pr-12 h-14 text-sm font-medium"
               required
@@ -570,7 +593,7 @@ export default function AddTransaction() {
               <input
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(event) => setDate(event.target.value)}
                 className="input-field font-mono text-xs h-12"
                 required
               />
@@ -581,7 +604,7 @@ export default function AddTransaction() {
                 type="text"
                 placeholder="Details..."
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={(event) => setNote(event.target.value)}
                 className="input-field h-12 text-xs"
               />
             </div>
@@ -608,6 +631,13 @@ export default function AddTransaction() {
           </button>
         </div>
       </form>
+
+      <CategoryPromptModal
+        open={showCategoryPrompt}
+        loading={isSavingCategory}
+        onCancel={() => setShowCategoryPrompt(false)}
+        onConfirm={handleCreateCustomCategory}
+      />
     </div>
   )
 }

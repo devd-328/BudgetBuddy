@@ -102,7 +102,7 @@ export default function Skeleton({
 
   if (count > 1) {
     return (
-      <div className={`space-y-3 ${className}`}>
+      <div className={`space-y-3 animate-fade-in ${className}`}>
         {Array.from({ length: count }).map((_, i) => (
           <Component key={i} />
         ))}
@@ -111,7 +111,7 @@ export default function Skeleton({
   }
 
   return (
-    <div className={className}>
+    <div className={`animate-fade-in ${className}`}>
       <Component />
     </div>
   )

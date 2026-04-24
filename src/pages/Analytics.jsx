@@ -235,10 +235,12 @@ export default function Analytics() {
       />
 
       {loading ? (
-        <div className="space-y-6">
-          <Skeleton variant="rect" height={220} />
-          <Skeleton variant="card" count={3} />
-          <Skeleton variant="rect" height={200} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+           <Skeleton variant="rect" height={320} className="w-full h-full" />
+           <div className="space-y-6">
+              <Skeleton variant="rect" height={220} />
+              <Skeleton variant="rect" height={200} />
+           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 stagger-children">

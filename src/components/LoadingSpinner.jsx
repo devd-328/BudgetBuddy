@@ -41,7 +41,7 @@ export default function LoadingSpinner({ fullPage = false, size = 'md', variant 
   // Full page skeleton layout
   return (
     <div className="min-h-screen bg-canvas flex items-center justify-center">
-      <div className="w-full max-w-mobile mx-auto px-4 py-6 space-y-6">
+      <div className="w-full page-content mx-auto px-4 py-6 space-y-6">
         {/* Header skeleton */}
         <div className="flex items-center justify-between">
           <div className="space-y-2">

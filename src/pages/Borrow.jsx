@@ -197,7 +197,11 @@ export default function Borrow() {
 
       {/* List */}
       {loading ? (
-        <Skeleton variant="card" count={3} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+           <Skeleton variant="card" />
+           <Skeleton variant="card" />
+           <Skeleton variant="card" />
+        </div>
       ) : filteredDebts.length === 0 ? (
         <EmptyState
           illustration="debts"
