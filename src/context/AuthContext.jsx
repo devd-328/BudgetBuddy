@@ -10,26 +10,49 @@ export function AuthProvider({ children }) {
 
   // Fetch user profile from profiles table
   async function fetchProfile(userId) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle()
-    if (!error && data) setProfile(data)
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (!error && data) setProfile(data)
+    } catch (err) {
+      // Silently fail offline — profile stays null, app still renders
+      console.warn('[AuthContext] fetchProfile failed (possibly offline):', err)
+    }
   }
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let settled = false
+
+    // Applies the session result exactly once, regardless of which path wins
+    const finish = (session) => {
+      if (settled) return
+      settled = true
       const u = session?.user ?? null
       setUser(u)
       if (u) fetchProfile(u.id)
       setLoading(false)
-    })
+    }
 
-    // Listen for auth state changes
+    // ✅ Offline guard: if getSession() never settles within 3 s, treat as
+    //    unauthenticated so the skeleton screen is never shown forever.
+    const timeoutId = setTimeout(() => {
+      console.warn('[AuthContext] getSession timed out — device may be offline.')
+      finish(null)
+    }, 3000)
+
+    // Get initial session (reads from localStorage cache; network only on expiry)
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => { clearTimeout(timeoutId); finish(session) })
+      .catch(() => { clearTimeout(timeoutId); finish(null) })
+
+    // Listen for auth state changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        clearTimeout(timeoutId)
+        settled = true
         const u = session?.user ?? null
         setUser(u)
         if (u) fetchProfile(u.id)
@@ -38,7 +61,10 @@ export function AuthProvider({ children }) {
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeoutId)
+    }
   }, [])
 
   async function signOut() {

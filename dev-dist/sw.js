@@ -79,7 +79,7 @@ define(['./workbox-52f2a342'], (function (workbox) { 'use strict';
    */
   workbox.precacheAndRoute([{
     "url": "index.html",
-    "revision": "0.4hfp1vbgin"
+    "revision": "0.bb4jg57tkro"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
@@ -87,6 +87,7 @@ define(['./workbox-52f2a342'], (function (workbox) { 'use strict';
   }));
   workbox.registerRoute(/^https:\/\/.*\.supabase\.co\/.*/i, new workbox.NetworkFirst({
     "cacheName": "supabase-cache",
+    "networkTimeoutSeconds": 5,
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 50,
       maxAgeSeconds: 86400
@@ -96,6 +97,13 @@ define(['./workbox-52f2a342'], (function (workbox) { 'use strict';
     "cacheName": "google-fonts-cache",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 10,
+      maxAgeSeconds: 31536000
+    })]
+  }), 'GET');
+  workbox.registerRoute(/^https:\/\/fonts\.gstatic\.com\/.*/i, new workbox.CacheFirst({
+    "cacheName": "google-fonts-webfont-cache",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 20,
       maxAgeSeconds: 31536000
     })]
   }), 'GET');

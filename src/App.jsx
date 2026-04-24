@@ -7,6 +7,7 @@ import Sidebar         from './components/Sidebar'
 import LoadingSpinner  from './components/LoadingSpinner'
 import ReloadPrompt   from './components/pwa/ReloadPrompt'
 import OnboardingOverlay from './components/OnboardingOverlay'
+import ErrorBoundary     from './components/ErrorBoundary'
 import { useOnboarding } from './hooks/useOnboarding'
 
 // Lazy load pages for better bundle performance
@@ -71,40 +72,42 @@ export default function App() {
       {showNav && <Sidebar highlightTarget={onboarding.highlightTarget} />}
       
       <main className={isLanding ? "" : "page-content"}>
-        <Suspense fallback={<LoadingSpinner fullPage />}>
-          <Routes>
-            {/* Public auth routes */}
-            <Route path="/login"   element={<Login />} />
-            <Route path="/signup"  element={<Signup />} />
-            <Route path="/forgot-password"  element={<ForgotPassword />} />
-            <Route path="/reset-password"   element={<ResetPassword />} />
-            <Route path="/verify-email"    element={<VerifyEmail />} />
-
-            {/* Protected app routes */}
-            <Route path="/" element={<HomeRoute />} />
-            <Route path="/analytics" element={
-              <ProtectedRoute><Analytics /></ProtectedRoute>
-            } />
-            <Route path="/add" element={
-              <ProtectedRoute><AddTransaction /></ProtectedRoute>
-            } />
-            <Route path="/borrow" element={
-              <ProtectedRoute><Borrow /></ProtectedRoute>
-            } />
-            <Route path="/ai" element={
-              <ProtectedRoute><AIAssistant /></ProtectedRoute>
-            } />
-            <Route path="/settings" element={
-              <ProtectedRoute><Settings onReplayTour={onboarding.replayTour} /></ProtectedRoute>
-            } />
-            <Route path="/categories" element={
-              <ProtectedRoute><Categories /></ProtectedRoute>
-            } />
-
-            {/* Fallback */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<LoadingSpinner fullPage />}>
+            <Routes>
+              {/* Public auth routes */}
+              <Route path="/login"   element={<Login />} />
+              <Route path="/signup"  element={<Signup />} />
+              <Route path="/forgot-password"  element={<ForgotPassword />} />
+              <Route path="/reset-password"   element={<ResetPassword />} />
+              <Route path="/verify-email"    element={<VerifyEmail />} />
+  
+              {/* Protected app routes */}
+              <Route path="/" element={<HomeRoute />} />
+              <Route path="/analytics" element={
+                <ProtectedRoute><Analytics /></ProtectedRoute>
+              } />
+              <Route path="/add" element={
+                <ProtectedRoute><AddTransaction /></ProtectedRoute>
+              } />
+              <Route path="/borrow" element={
+                <ProtectedRoute><Borrow /></ProtectedRoute>
+              } />
+              <Route path="/ai" element={
+                <ProtectedRoute><AIAssistant /></ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute><Settings onReplayTour={onboarding.replayTour} /></ProtectedRoute>
+              } />
+              <Route path="/categories" element={
+                <ProtectedRoute><Categories /></ProtectedRoute>
+              } />
+  
+              {/* Fallback */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
       {showNav && <BottomNav highlightTarget={onboarding.highlightTarget} />}

@@ -83,12 +83,22 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
+
+        // ✅ Fix #2: Ensure ALL SPA routes (e.g. /analytics, /borrow) are handled
+        //   offline by the SW. Without this, navigating to a sub-route while
+        //   offline returns a network error instead of the cached app shell.
+        navigateFallback: 'index.html',
+        navigateFallbackAllowlist: [/^(?!\/api\/).*/],
+
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-cache',
+              // ✅ Fix #3: Fall back to cache after 5 s instead of hanging
+              //   forever when offline. Prevents fetchProfile from stalling.
+              networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24,
@@ -105,7 +115,20 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24 * 365,
               },
             },
-          }
+          },
+          {
+            // ✅ Fix #4: Wire offline.html as a fallback for font requests
+            //   and any external resource that fails while offline.
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfont-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+            },
+          },
         ],
       },
     }),
