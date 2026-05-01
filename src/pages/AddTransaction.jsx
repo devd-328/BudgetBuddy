@@ -47,23 +47,28 @@ const ICON_MAP = {
   Gift,
   TrendingUp,
   Coins,
-  '??': Utensils,
-  '??': Bus,
-  '??': BookOpen,
-  '??': Heart,
-  '??': ShoppingBag,
-  '??': Gamepad2,
-  '??': Zap,
-  '?': Plus,
-  '??': Briefcase,
-  '??': Laptop,
-  '??': Gift,
-  '??': TrendingUp,
-  '??': Coins,
 }
 
-function getCategoryIcon(icon) {
-  return ICON_MAP[icon] || ICON_MAP[icon?.trim?.()] || Plus
+const DEFAULT_ICON_BY_CATEGORY = {
+  Food: Utensils,
+  Transport: Bus,
+  Education: BookOpen,
+  Health: Heart,
+  Shopping: ShoppingBag,
+  Entertainment: Gamepad2,
+  Bills: Zap,
+  Salary: Briefcase,
+  Freelance: Laptop,
+  Gift,
+  Business: TrendingUp,
+  'Other Income': Coins,
+}
+
+function getCategoryIcon(icon, categoryName) {
+  const normalized = icon?.trim?.() || icon
+  if (normalized && ICON_MAP[normalized]) return ICON_MAP[normalized]
+  if (categoryName && DEFAULT_ICON_BY_CATEGORY[categoryName]) return DEFAULT_ICON_BY_CATEGORY[categoryName]
+  return Plus
 }
 
 const TYPE_OPTIONS = [
@@ -102,7 +107,7 @@ export default function AddTransaction() {
       .filter((item) => (item.type || 'expense') === 'expense')
       .map((item) => ({
         name: item.name,
-        icon: getCategoryIcon(item.icon),
+        icon: getCategoryIcon(item.icon, item.name),
         color: item.color || '#5A5A6E',
       }))
   )
@@ -111,7 +116,7 @@ export default function AddTransaction() {
     .filter((item) => item.type === 'income')
     .map((item) => ({
       name: item.name,
-      icon: getCategoryIcon(item.icon),
+      icon: getCategoryIcon(item.icon, item.name),
       color: item.color || '#5A5A6E',
     }))
 
@@ -282,7 +287,6 @@ export default function AddTransaction() {
           name: trimmedName,
           icon: 'Plus',
           color: '#8A8A9E',
-          type: 'expense',
           budget_limit: 0,
         }])
 

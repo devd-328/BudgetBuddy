@@ -14,7 +14,10 @@ export function useCategoriesAndBudgetsFixed(userId) {
   const [loading, setLoading] = useState(true)
 
   const fetchData = useCallback(async () => {
-    if (!userId) return
+    if (!userId) {
+      setLoading(false)
+      return
+    }
 
     setLoading(true)
     try {
@@ -99,6 +102,21 @@ export function useCategoriesAndBudgetsFixed(userId) {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  useEffect(() => {
+    if (!userId) return undefined
+
+    const channel = supabase
+      .channel(`categories-live-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories', filter: `user_id=eq.${userId}` }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'budgets', filter: `user_id=eq.${userId}` }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, fetchData)
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [fetchData, userId])
 
   return { categories, budgets, spentMap, loading, refetch: fetchData }
 }

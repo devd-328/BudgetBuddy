@@ -35,7 +35,7 @@ const ICON_OPTIONS = [
 
 const COLORS = ['#34D399', '#60A5FA', '#FB923C', '#FB7185', '#FBBF24', '#A78BFA', '#2DD4BF', '#8A8A9E', '#F472B6', '#6366F1', '#EC4899']
 
-const EMOJI_TO_LUCIDE = {
+const ICON_COMPONENTS = {
   Utensils,
   Bus,
   BookOpen,
@@ -50,24 +50,34 @@ const EMOJI_TO_LUCIDE = {
   Gift,
   Plus,
   HelpCircle,
-  '??': Utensils,
-  '??': Bus,
-  '??': BookOpen,
-  '??': Heart,
-  '??': ShoppingBag,
-  '??': Gamepad2,
-  '??': Zap,
-  '?': Plus,
-  '??': Coffee,
-  '??': Plane,
-  '??': Dog,
-  '??': Shirt,
-  '??': Gift,
-  '?': Coffee,
 }
 
-function getCategoryIcon(iconStr) {
-  return EMOJI_TO_LUCIDE[iconStr] || EMOJI_TO_LUCIDE[iconStr?.trim?.()] || HelpCircle
+const DEFAULT_ICON_BY_CATEGORY = {
+  Food: Utensils,
+  Transport: Bus,
+  Education: BookOpen,
+  Health: Heart,
+  Shopping: ShoppingBag,
+  Entertainment: Gamepad2,
+  Bills: Zap,
+}
+
+function getCategoryIcon(iconStr, categoryName) {
+  const normalized = iconStr?.trim?.() || iconStr
+  if (normalized && ICON_COMPONENTS[normalized]) return ICON_COMPONENTS[normalized]
+  if (categoryName && DEFAULT_ICON_BY_CATEGORY[categoryName]) return DEFAULT_ICON_BY_CATEGORY[categoryName]
+  return HelpCircle
+}
+
+function normalizeIconValue(iconStr, categoryName) {
+  const normalized = iconStr?.trim?.() || iconStr
+  if (normalized && ICON_COMPONENTS[normalized]) return normalized
+
+  const defaultIcon = DEFAULT_ICON_BY_CATEGORY[categoryName]
+  if (!defaultIcon) return 'HelpCircle'
+
+  const match = Object.entries(ICON_COMPONENTS).find(([, component]) => component === defaultIcon)
+  return match?.[0] || 'HelpCircle'
 }
 
 export default function Categories() {
@@ -96,7 +106,7 @@ export default function Categories() {
     setSelectedCat(category)
     if (category) {
       setCatName(category.name)
-      setCatIcon(category.icon)
+      setCatIcon(normalizeIconValue(category.icon, category.name))
       setCatColor(category.color)
     } else {
       setCatName('')
@@ -135,7 +145,7 @@ export default function Categories() {
       } else {
         const { error } = await supabase
           .from('categories')
-          .insert([{ user_id: user.id, name: trimmedName, icon: catIcon, color: catColor, type: 'expense', budget_limit: 0 }])
+          .insert([{ user_id: user.id, name: trimmedName, icon: catIcon, color: catColor, budget_limit: 0 }])
         if (error) throw error
         CustomToast.success('Category created', `New category "${trimmedName}" is ready for use.`)
       }
@@ -175,7 +185,6 @@ export default function Categories() {
           name: trimmedName,
           icon: 'Plus',
           color: '#8A8A9E',
-          type: 'expense',
           budget_limit: 0,
         }])
 
@@ -346,7 +355,7 @@ export default function Categories() {
             const spent = spentMap[category.id] || 0
             const activeBudget = budgets.find((budget) => budget.category_id === category.id)
             const limit = activeBudget ? Number(activeBudget.limit_amount) : 0
-            const Icon = getCategoryIcon(category.icon)
+            const Icon = getCategoryIcon(category.icon, category.name)
             const isExpanded = expandedBudget === category.id
 
             return (

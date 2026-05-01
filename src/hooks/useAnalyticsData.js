@@ -134,7 +134,14 @@ export function useAnalyticsData(userId, period) {
          budgetProgress,
          transactions: (txs || [])
            .filter((tx) => tx.date >= startStr)
-           .sort((a, b) => new Date(b.date) - new Date(a.date)),
+           .sort((a, b) => new Date(b.date) - new Date(a.date))
+           .map((tx) => {
+             const matchedCat = cats?.find((category) => category.name === tx.category)
+             return {
+               ...tx,
+               categoryColor: matchedCat?.color || tx.categoryColor || '#5A5A6E',
+             }
+           }),
          lineData: {
             labels: lineLabels,
             income: lineIncome,

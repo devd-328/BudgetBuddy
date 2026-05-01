@@ -34,6 +34,13 @@ export function useDashboardData(userId) {
       const currentYear = new Date().getFullYear()
       const startOfMonth = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0]
       
+      const { data: cats, error: catsError } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('user_id', userId)
+
+      if (catsError) throw catsError
+
       // 1. Fetch all transactions so balance always reflects the full ledger
       const { data: txData, error: txError } = await supabase
         .from('transactions')
@@ -74,7 +81,15 @@ export function useDashboardData(userId) {
          return new Date(b.created_at || 0) - new Date(a.created_at || 0)
       })
 
-      sortedTransactions.forEach(tx => {
+      const decoratedTransactions = sortedTransactions.map((tx) => {
+        const matchedCat = cats?.find((category) => category.name === tx.category)
+        return {
+          ...tx,
+          categoryColor: matchedCat?.color || tx.categoryColor || '#5A5A6E',
+        }
+      })
+
+      decoratedTransactions.forEach(tx => {
          if (tx.type === 'income') {
            income += Number(tx.amount)
          } else if (tx.type === 'expense') {
@@ -90,7 +105,8 @@ export function useDashboardData(userId) {
       // Top 4 categories
       const categoriesSpends = Object.keys(categorised).map(c => ({
          name: c,
-         amount: categorised[c]
+        amount: categorised[c],
+        color: cats?.find((category) => category.name === c)?.color || '#5A5A6E'
       })).sort((a,b) => b.amount - a.amount).slice(0, 4)
 
       const lentOut = debtData?.reduce((sum, d) => sum + Number(d.amount), 0) || 0
@@ -117,7 +133,7 @@ export function useDashboardData(userId) {
          totalBalance,
          totalLentOut: lentOut,
          readyToAssign: readyToAssign,
-         recentTransactions: sortedTransactions.slice(0, 5),
+        recentTransactions: decoratedTransactions.slice(0, 5),
          weeklyData,
          categoriesSpends
       })
@@ -140,6 +156,7 @@ export function useDashboardData(userId) {
     const channel = supabase
       .channel(`dashboard-live-${userId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories', filter: `user_id=eq.${userId}` }, fetchData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'budgets', filter: `user_id=eq.${userId}` }, fetchData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'debts', filter: `user_id=eq.${userId}` }, fetchData)
       .subscribe()

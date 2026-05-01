@@ -26,9 +26,9 @@ const CATEGORY_COLORS = {
 }
 
 export default function TransactionRow({ transaction, currency = 'Rs', style, onEdit, onDelete }) {
-  const { type, amount, category, description, date, note } = transaction
+  const { type, amount, category, description, date, note, categoryColor } = transaction
   const Icon = CATEGORY_ICONS[category] || HelpCircle
-  const color = CATEGORY_COLORS[category] || '#5A5A6E'
+  const color = categoryColor || CATEGORY_COLORS[category] || '#5A5A6E'
   const isIncome = type === 'income'
 
   const formattedDate = new Date(date).toLocaleDateString('en-US', {

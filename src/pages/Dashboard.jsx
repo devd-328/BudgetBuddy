@@ -346,7 +346,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {categoriesSpends.map((cat, i) => {
                   const Icon = CATEGORY_ICONS[cat.name] || HelpCircle
-                  const color = CATEGORY_COLORS[cat.name] || '#5A5A6E'
+                  const color = cat.color || CATEGORY_COLORS[cat.name] || '#5A5A6E'
                   return (
                     <div
                       key={i}
